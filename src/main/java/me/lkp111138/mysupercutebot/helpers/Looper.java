@@ -19,6 +19,9 @@ public class Looper extends Thread {
     public void run() {
         for (;;) {
             long last_run = System.currentTimeMillis();
+            Date date = new Date(last_run);
+            SimpleDateFormat sdf = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss.SSS]");
+            System.out.println(sdf.format(date));
             // player war log
             warlog();
             // terr log
@@ -49,18 +52,22 @@ public class Looper extends Thread {
         for (String server : war_servers) {
             if (!now.has(server)) {
                 // war server closed
-                War.byServer(server).close();
+                try {
+                    War.byServer(server).close(now.getJSONObject("request").getInt("timestamp")); // cuz the war object may close itself
+                } catch (Exception ignored) {
+                }
             }
         }
         for (String i : now.keySet()) {
             if (!i.startsWith("WAR")) continue;
             if (!war_servers.contains(i)) {
-                new War(i);
+                new War(i, now.getJSONObject("request").getInt("timestamp"));
                 war_servers.add(i);
             }
             JSONArray players = now.getJSONArray(i);
             System.out.printf("%s: %s\n", i, players.toString());
             War war = War.byServer(i);
+            if (war == null) continue;
             for (int j = 0; j < players.length(); ++j) {
                 String name = players.getString(j);
                 if (war.getGuild() == null) {
@@ -70,7 +77,7 @@ public class Looper extends Thread {
                     }
                 }
             }
-            war.putPlayerList(players);
+            war.putPlayerList(players, now.getJSONObject("request").getInt("timestamp"));
         }
         System.out.print("\n");
     }

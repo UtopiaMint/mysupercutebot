@@ -14,10 +14,11 @@ public class DatabaseHelper {
     }
 
     /** @return war id */
-    public static int new_war_server(String war_server) {
+    public static int new_war_server(String war_server, int start_time) {
         try {
-            PreparedStatement stmt = connection.prepareStatement("insert into war_log (server) values (?)", Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement stmt = connection.prepareStatement("insert into war_log (server, start_time) values (?, ?)", Statement.RETURN_GENERATED_KEYS);
             stmt.setString(1, war_server);
+            stmt.setInt(2, start_time);
             stmt.execute();
             ResultSet rs = stmt.getGeneratedKeys();
             rs.next();

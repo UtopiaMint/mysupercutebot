@@ -23,10 +23,10 @@ public class War {
     private static Map<String, War> guild_war = new HashMap<>();
     private static Map<String, War> server_war = new HashMap<>();
 
-    public War(String server) {
+    public War(String server, int start_time) {
         this.server = server;
         server_war.put(server, this);
-        id = DatabaseHelper.new_war_server(server);
+        id = DatabaseHelper.new_war_server(server, start_time);
         System.out.printf("war id: %d\n", id);
     }
 
@@ -69,10 +69,10 @@ public class War {
         }
     }
 
-    public void putPlayerList(JSONArray _players) {
+    public void putPlayerList(JSONArray _players, int time) {
         if (_players.isEmpty()) {
             // hold on, the war may have ended, don't mark them dead
-            close();
+            close(time);
             return;
         }
         // add everybody that's in the war server
@@ -103,16 +103,26 @@ public class War {
         }
     }
 
-    // TODO: implementation
-    public void close() {
+    public void close(int end_time) {
         // we wait 20 secs and poll db for a terr gain event for a maximum of 5 times
         // if that doesn't work you lost
         if (closed || !started) return;
         System.out.printf("closing war %d\n", id);
         closed = true;
+        guild_war.remove(guild);
+        server_war.remove(server);
+        PreparedStatement stmt1;
+        try {
+            stmt1 = DatabaseHelper.getConnection().prepareStatement("update war_log set end_time=? where id=?");
+            stmt1.setInt(1, end_time);
+            stmt1.setInt(2, id);
+            stmt1.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         Main.getPool().schedule(() -> {
             long last_run =  System.currentTimeMillis();
-            for (int i = 2; i < 7; ++i) {
+            for (int i = 5; i < 10; ++i) {
                 try {
                     Thread.sleep(last_run + 20000 - System.currentTimeMillis());
                 } catch (InterruptedException e) {
@@ -123,7 +133,7 @@ public class War {
                 int now = (int) (System.currentTimeMillis() / 1000);
                 Connection conn = DatabaseHelper.getConnection();
                 try {
-                    PreparedStatement stmt = conn.prepareStatement("select count(*), id from terr_log where attacker=? and acquired<?");
+                    PreparedStatement stmt = conn.prepareStatement("select count(*), id from terr_log where attacker=? and acquired>=?");
                     stmt.setString(1, guild);
                     stmt.setInt(2, now - 20 * i);
                     ResultSet rs = stmt.executeQuery();
@@ -140,7 +150,7 @@ public class War {
                         stmt.setInt(1, rs.getInt(2));
                         stmt.setInt(2, id);
                         stmt.execute();
-                        break;
+                        return;
                     }
                     System.out.printf("didnt find a terr log for %s war %d yet, iteration %d\n", guild, id, i);
                 } catch (SQLException e) {
@@ -150,7 +160,7 @@ public class War {
             // if this is reached then u lost oof
             System.out.printf("didnt find a terr log for %s war %d\n", guild, id);
             try {
-                PreparedStatement stmt = DatabaseHelper.getConnection().prepareStatement("update player_war_log set survived=0, won=0 and war_id=?");
+                PreparedStatement stmt = DatabaseHelper.getConnection().prepareStatement("update player_war_log set survived=0, won=0 where war_id=?");
                 stmt.setInt(1, id);
                 stmt.execute();
             } catch (SQLException e) {
