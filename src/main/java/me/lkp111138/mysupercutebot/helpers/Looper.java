@@ -1,26 +1,24 @@
 package me.lkp111138.mysupercutebot.helpers;
 
+import me.lkp111138.mysupercutebot.objects.War;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static me.lkp111138.mysupercutebot.helpers.Functions.ign2uuid;
-import static me.lkp111138.mysupercutebot.helpers.Functions.playerInfo;
-
 public class Looper extends Thread {
-    private long last_run = 0;
     private JSONObject warlog_cache;
     private JSONObject terrlog_cache;
+//    private List<String> war_servers = new ArrayList<>();
+    private List<String> war_servers = new ArrayList<>();
 
     @Override
     public void run() {
         for (;;) {
-            last_run = System.currentTimeMillis();
+            long last_run = System.currentTimeMillis();
             // player war log
             warlog();
             // terr log
@@ -48,70 +46,30 @@ public class Looper extends Thread {
     private void warlog_log(JSONObject last, JSONObject now) {
         if (now == null || last == null) return;
         // normal -> war
-        for (String i : now.keySet()) {
-            if (!i.startsWith("WAR")) continue;
-            for (int j = 0; j < now.getJSONArray(i).length(); ++j) {
-                String name = now.getJSONArray(i).getString(j);
-                for (String server : last.keySet()) {
-                    if (server.equals("request")) continue;
-                    if (last.getJSONArray(server).toList().indexOf(name) > 0) {
-                        if (!server.equals(i)) {
-                            System.out.printf("%s: %s -> %s\n", name, server, i);
-                            String guild = "???";
-                            try {
-                                guild = playerInfo(name).getJSONObject("guild").getString("name");
-                            } catch (Exception ignored) {
-                            }
-                            DatabaseHelper.insert_warlog(ign2uuid(name), name, guild, now.getJSONObject("request").getInt("timestamp"), server, i);
-                        }
-                        break;
-                    }
-                }
+        for (String server : war_servers) {
+            if (!now.has(server)) {
+                // war server closed
+                War.byServer(server).close();
             }
         }
-        // war -> normal
-        // TODO: detect war servers appearing as a sign of a new war; give verdict when war ends
-        List<String> winners = new ArrayList<>();
         for (String i : now.keySet()) {
-            if (!i.startsWith("WC")) continue;
-            System.out.printf("processing server %s\n", i);
-            for (int j = 0; j < now.getJSONArray(i).length(); ++j) {
-                String name = now.getJSONArray(i).getString(j);
-                for (String server : last.keySet()) {
-                    if (server.equals("request") || server.startsWith("WC") || server.startsWith("lobby")) continue; // why should we care about people switch servers for csst?
-                    if (last.getJSONArray(server).toList().indexOf(name) > 0) {
-                        if (!server.equals(i)) {
-                            System.out.printf("%s: %s -> %s\n", name, server, i);
-//                            DatabaseHelper.insert_warlog(ign2uuid(name), playerInfo(name).getJSONObject("guild").getString("name"), server, i);
-                            // now we determine the verdict
-                            // if the war server isn't empty yet, you're dead
-                            if (now.has(server) && now.getJSONArray(server).length() > 0) {
-                                DatabaseHelper.war_verdict(ign2uuid(name), server, false, null);
-                            } else {
-                                // so the server is empty, you probably survived, lets check for a recent terr gain event of your guild
-                                String guild = "???";
-                                try {
-                                    guild = playerInfo(name).getJSONObject("guild").getString("name");
-                                } catch (Exception ignored) {
-                                }
-                                boolean won = winners.contains(guild);
-                                ResultSet rs = won ? null : DatabaseHelper.query("select count(*) from territory_log where attacker=? and acquired_ts<?", new String[]{guild, String.valueOf(System.currentTimeMillis() / 1000 - 75)});
-                                try {
-                                    if (won || rs != null && rs.next() && rs.getInt(1) == 1) {
-                                        // congrats for winning
-                                        DatabaseHelper.war_verdict(ign2uuid(name), server, true, true);
-                                    } else {
-                                        DatabaseHelper.war_verdict(ign2uuid(name), server, false, false);
-                                    }
-                                } catch (SQLException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                        break;
+            if (!i.startsWith("WAR")) continue;
+            if (!war_servers.contains(i)) {
+                new War(i);
+                war_servers.add(i);
+            }
+            JSONArray players = now.getJSONArray(i);
+            War war = War.byServer(i);
+            for (int j = 0; j < players.length(); ++j) {
+                String name = players.getString(j);
+                if (war.getGuild() == null) {
+                    try {
+                        war.setGuild(Functions.playerInfo(name).getJSONObject("guild").getString("name"));
+                    } catch (Exception ignored){
                     }
                 }
             }
+            war.putPlayerList(players);
         }
     }
 

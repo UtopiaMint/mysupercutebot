@@ -51,7 +51,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        me.lkp111138.social_platform.Main
+                                        me.lkp111138.mysupercutebot.Main
                                     </mainClass>
                                 </manifest>
                             </archive>
@@ -82,7 +82,7 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20170516</version>
+            <version>20180813</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
         <dependency>
@@ -91,6 +91,4 @@
             <version>5.1.44</version>
         </dependency>
     </dependencies>
-
-
 </project>

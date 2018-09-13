@@ -5,13 +5,21 @@ import me.lkp111138.mysupercutebot.helpers.Looper;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class Main {
-    private static Connection connection;
     // ping wynn api every 20secs yay
+    private static ScheduledThreadPoolExecutor pool = new ScheduledThreadPoolExecutor(2);
+
     public static void main(String[] args) throws ClassNotFoundException, SQLException {
         // set up sql connection
         DatabaseHelper.init();
         new Looper().run();
+    }
+
+    public static ScheduledThreadPoolExecutor getPool() {
+        return pool;
     }
 }
