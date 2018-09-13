@@ -49,6 +49,7 @@ public class Looper extends Thread {
     private void warlog_log(JSONObject last, JSONObject now) {
         if (now == null || last == null) return;
         // normal -> war
+        List<String> removed = new ArrayList<>();
         for (String server : war_servers) {
             if (!now.has(server)) {
                 // war server closed
@@ -56,9 +57,10 @@ public class Looper extends Thread {
                     War.byServer(server).close(now.getJSONObject("request").getInt("timestamp")); // cuz the war object may close itself
                 } catch (Exception ignored) {
                 }
-                war_servers.remove(server);
+                removed.add(server);
             }
         }
+        war_servers.removeAll(removed);
         for (String i : now.keySet()) {
             if (!i.startsWith("WAR")) continue;
             if (!war_servers.contains(i)) {
