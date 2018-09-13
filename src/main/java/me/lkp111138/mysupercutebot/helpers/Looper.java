@@ -59,6 +59,7 @@ public class Looper extends Thread {
                 war_servers.add(i);
             }
             JSONArray players = now.getJSONArray(i);
+            System.out.printf("%s: %s\n", i, players.toString());
             War war = War.byServer(i);
             for (int j = 0; j < players.length(); ++j) {
                 String name = players.getString(j);
@@ -71,6 +72,7 @@ public class Looper extends Thread {
             }
             war.putPlayerList(players);
         }
+        System.out.print("\n");
     }
 
     private void terrlog_log(JSONObject last, JSONObject now) {

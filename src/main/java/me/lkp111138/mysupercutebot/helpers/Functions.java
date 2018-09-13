@@ -10,7 +10,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-class Functions {
+public class Functions {
     private static Map<String, JSONObject> guild_cache = new HashMap<>();
     private static Map<String, JSONObject> player_cache = new HashMap<>();
     private static Map<String, JSONObject> uuid_cache = new HashMap<>();
