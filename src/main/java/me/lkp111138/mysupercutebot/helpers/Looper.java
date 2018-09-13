@@ -56,6 +56,7 @@ public class Looper extends Thread {
                     War.byServer(server).close(now.getJSONObject("request").getInt("timestamp")); // cuz the war object may close itself
                 } catch (Exception ignored) {
                 }
+                war_servers.remove(server);
             }
         }
         for (String i : now.keySet()) {
