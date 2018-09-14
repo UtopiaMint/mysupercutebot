@@ -4,15 +4,20 @@ import me.lkp111138.mysupercutebot.objects.War;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static me.lkp111138.mysupercutebot.helpers.Functions.http_get;
+
 public class Looper extends Thread {
     private JSONObject warlog_cache;
     private JSONObject terrlog_cache;
-//    private List<String> war_servers = new ArrayList<>();
+    private int last_xp_log = -1;
     private List<String> war_servers = new ArrayList<>();
 
     @Override
@@ -20,12 +25,14 @@ public class Looper extends Thread {
         for (;;) {
             long last_run = System.currentTimeMillis();
             Date date = new Date(last_run);
-            SimpleDateFormat sdf = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss.SSS]");
-            System.out.println(sdf.format(date));
+            SimpleDateFormat sdf = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss.SSS");
+            System.out.printf("%s / %d]\n", sdf.format(date), date.getTime());
             // player war log
             warlog();
             // terr log
             terrlog();
+            // xp log
+            xplog();
             try {
                 sleep(last_run + 20000 - System.currentTimeMillis());
             } catch (InterruptedException e) {
@@ -34,14 +41,19 @@ public class Looper extends Thread {
         }
     }
 
+    private void xplog() {
+        JSONObject xp = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=statsLeaderboard&type=guild&timeframe=alltime"));
+        xp_log(xp);
+    }
+
     private void warlog() {
-        JSONObject online = new JSONObject(Functions.http_get("https://api.wynncraft.com/public_api.php?action=onlinePlayers"));
+        JSONObject online = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=onlinePlayers"));
         warlog_log(warlog_cache, online);
         warlog_cache = online;
     }
 
     private void terrlog() {
-        JSONObject terr_list = new JSONObject(Functions.http_get("https://api.wynncraft.com/public_api.php?action=territoryList"));
+        JSONObject terr_list = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=territoryList"));
         terrlog_log(terrlog_cache, terr_list);
         terrlog_cache = terr_list;
     }
@@ -100,9 +112,26 @@ public class Looper extends Thread {
         }
     }
 
+    private void xp_log(JSONObject data) {
+        int ts = data.getJSONObject("request").getInt("timestamp");
+        if (ts > last_xp_log + 1800) {
+            last_xp_log = ts;
+            try {
+                Connection conn = DatabaseHelper.getConnection();
+                PreparedStatement stmt = conn.prepareStatement("insert into xp_log (timestamp, payload) values (?, ?)");
+                JSONArray payload = data.getJSONArray("data");
+                stmt.setInt(1, ts);
+                stmt.setString(2, payload.toString());
+                stmt.execute();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private long date2long(String data) {
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-        Date date = null;
+        Date date;
         try {
             date = formatter.parse(data);
         } catch (ParseException e) {
