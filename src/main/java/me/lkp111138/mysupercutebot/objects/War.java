@@ -122,7 +122,7 @@ public class War {
         }
         Main.getPool().schedule(() -> {
             long last_run =  System.currentTimeMillis();
-            for (int i = 5; i < 10; ++i) {
+            for (int i = 6; i < 11; ++i) {
                 try {
                     Thread.sleep(last_run + 20000 - System.currentTimeMillis());
                 } catch (InterruptedException e) {
@@ -133,13 +133,13 @@ public class War {
                 int now = (int) (System.currentTimeMillis() / 1000);
                 Connection conn = DatabaseHelper.getConnection();
                 try {
-                    PreparedStatement stmt = conn.prepareStatement("select count(*), id from terr_log where attacker=? and acquired>=?");
+                    PreparedStatement stmt = conn.prepareStatement("select count(*), max(id) from terr_log where attacker=? and acquired>=?");
                     stmt.setString(1, guild);
                     stmt.setInt(2, now - 20 * i);
                     ResultSet rs = stmt.executeQuery();
-                    if (rs.next() && rs.getInt(1) == 1) {
+                    if (rs.next() && rs.getInt(1) >= 1) {
                         // congrats on winning
-                        System.out.printf("found a terr log for %s war %d, iteration %d\n", guild, id, i);
+                        System.out.printf("found a terr log for %s war %d, iteration %d\n", guild, id, i - 6);
                         stmt = conn.prepareStatement("update player_war_log set won=1 where war_id=?");
                         stmt.setInt(1, id);
                         stmt.execute();
@@ -152,7 +152,8 @@ public class War {
                         stmt.execute();
                         return;
                     }
-                    System.out.printf("didnt find a terr log for %s war %d yet, iteration %d\n", guild, id, i);
+                    System.out.printf("records found： %d\n", rs.getInt(1));
+                    System.out.printf("didnt find a terr log for %s war %d yet, iteration %d, looking for terr log after %d\n", guild, id, i - 6, now - 20 * i);
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }

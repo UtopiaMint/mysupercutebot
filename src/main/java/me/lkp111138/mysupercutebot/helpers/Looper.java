@@ -105,8 +105,6 @@ public class Looper extends Thread {
             if (!terr0.getString("guild").equals(terr1.getString("guild"))) {
                 long acquired = date2long(terr1.getString("acquired"));
                 long ms = acquired - date2long(terr0.getString("acquired"));
-//                console.log(`${i}: ${terr0.guild} -> ${terr1.guild}\nAcquired: ${terr1.acquired}\nHeld for: ${ms / 1000}`);
-//                System.out.printf("%s: %s -> %s\nAcquired: %s\nHeld for %d secs\n", i, terr0.getString("guild"), terr1.getString("guild"), terr1.getString("acquired"), ms / 1000);
                 DatabaseHelper.terr_log(i, terr0.getString("guild"), terr1.getString("guild"), (int) (acquired / 1000), (int) (ms / 1000));
             }
         }
