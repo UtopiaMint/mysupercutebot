@@ -133,9 +133,11 @@ public class War {
                 int now = (int) (System.currentTimeMillis() / 1000);
                 Connection conn = DatabaseHelper.getConnection();
                 try {
+                    // terr gain time < war end time
+                    // terr gain time + 50 > war end time
                     PreparedStatement stmt = conn.prepareStatement("select count(*), max(id) from terr_log where attacker=? and acquired>=?");
                     stmt.setString(1, guild);
-                    stmt.setInt(2, now - 20 * i);
+                    stmt.setInt(2, end_time - 80);
                     ResultSet rs = stmt.executeQuery();
                     if (rs.next() && rs.getInt(1) >= 1) {
                         // congrats on winning
