@@ -135,9 +135,10 @@ public class War {
                 try {
                     // terr gain time < war end time
                     // terr gain time + 50 > war end time
-                    PreparedStatement stmt = conn.prepareStatement("select count(*), max(id) from terr_log where attacker=? and acquired>=?");
+                    PreparedStatement stmt = conn.prepareStatement("select count(*), max(id) from terr_log where attacker=? and acquired>=? and acquired<=?");
                     stmt.setString(1, guild);
                     stmt.setInt(2, end_time - 80);
+                    stmt.setInt(3, end_time); // i don't think the war ends before you acquire
                     ResultSet rs = stmt.executeQuery();
                     if (rs.next() && rs.getInt(1) >= 1) {
                         // congrats on winning
