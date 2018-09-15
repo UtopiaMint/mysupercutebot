@@ -43,19 +43,34 @@ public class Looper extends Thread {
 
     private void xplog() {
         JSONObject xp = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=statsLeaderboard&type=guild&timeframe=alltime"));
-        xp_log(xp);
+        try {
+            xp_log(xp);
+        } catch (Exception e) {
+            System.out.println(xp);
+            e.printStackTrace();
+        }
     }
 
     private void warlog() {
         JSONObject online = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=onlinePlayers"));
-        warlog_log(warlog_cache, online);
-        warlog_cache = online;
+        try {
+            warlog_log(warlog_cache, online);
+            warlog_cache = online;
+        } catch (Exception e) {
+            System.out.println(online);
+            e.printStackTrace();
+        }
     }
 
     private void terrlog() {
         JSONObject terr_list = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=territoryList"));
-        terrlog_log(terrlog_cache, terr_list);
-        terrlog_cache = terr_list;
+        try {
+            terrlog_log(terrlog_cache, terr_list);
+            terrlog_cache = terr_list;
+        } catch (Exception e) {
+            System.out.println(terr_list);
+            e.printStackTrace();
+        }
     }
 
     private void warlog_log(JSONObject last, JSONObject now) {

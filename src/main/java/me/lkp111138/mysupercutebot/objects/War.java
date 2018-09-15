@@ -72,7 +72,7 @@ public class War {
     public void putPlayerList(JSONArray _players, int time) {
         if (_players.isEmpty()) {
             // hold on, the war may have ended, don't mark them dead
-            close(time);
+            _close(time);
             return;
         }
         // add everybody that's in the war server
@@ -103,7 +103,13 @@ public class War {
         }
     }
 
+    // called when the war server is gone
     public void close(int end_time) {
+        started = true;
+        _close(end_time);
+    }
+
+    private void _close(int end_time) {
         // we wait 20 secs and poll db for a terr gain event for a maximum of 5 times
         // if that doesn't work you lost
         if (closed || !started) return;
