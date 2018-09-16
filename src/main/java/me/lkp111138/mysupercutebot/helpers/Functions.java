@@ -1,12 +1,10 @@
 package me.lkp111138.mysupercutebot.helpers;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.json.JSONObject;
 
-import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,6 +12,7 @@ public class Functions {
     private static Map<String, JSONObject> guild_cache = new HashMap<>();
     private static Map<String, JSONObject> player_cache = new HashMap<>();
     private static Map<String, JSONObject> uuid_cache = new HashMap<>();
+    private static OkHttpClient client = new OkHttpClient();
 
 
     public static JSONObject guildInfo(String name) {
@@ -70,32 +69,15 @@ public class Functions {
     }
 
     public static String http_get(String url) {
-        URL warlog_url;
-        HttpsURLConnection conn;
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
         try {
-            warlog_url = new URL(url);
-            conn = (HttpsURLConnection) warlog_url.openConnection();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "";
-        }
-        BufferedReader br;
-        try {
-            br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            Response response = client.newCall(request).execute();
+            return response.body().string();
         } catch (Exception e) {
-            br = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
-        }
-        StringBuilder input = new StringBuilder();
-        String line;
-        try {
-            while ((line = br.readLine()) != null) {
-                input.append(line);
-            }
-            br.close();
-        } catch (IOException e) {
             e.printStackTrace();
-            return "";
+            return "{}";
         }
-        return input.toString();
     }
 }

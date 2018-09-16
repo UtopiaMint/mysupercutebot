@@ -34,7 +34,7 @@ public class Looper extends Thread {
             // xp log
             xplog();
             try {
-                sleep(last_run + 20000 - System.currentTimeMillis());
+                sleep(Math.max(0, last_run + 20000 - System.currentTimeMillis()));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -42,33 +42,39 @@ public class Looper extends Thread {
     }
 
     private void xplog() {
-        JSONObject xp = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=statsLeaderboard&type=guild&timeframe=alltime"));
+        String _xp = null;
         try {
+            _xp = http_get("https://api.wynncraft.com/public_api.php?action=statsLeaderboard&type=guild&timeframe=alltime");
+            JSONObject xp = new JSONObject(_xp);
             xp_log(xp);
         } catch (Exception e) {
-            System.out.println(xp);
+            System.out.println(_xp);
             e.printStackTrace();
         }
     }
 
     private void warlog() {
-        JSONObject online = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=onlinePlayers"));
+        String _online = null;
         try {
+            _online = http_get("https://api.wynncraft.com/public_api.php?action=onlinePlayers");
+            JSONObject online = new JSONObject(_online);
             warlog_log(warlog_cache, online);
             warlog_cache = online;
         } catch (Exception e) {
-            System.out.println(online);
+            System.out.println(_online);
             e.printStackTrace();
         }
     }
 
     private void terrlog() {
-        JSONObject terr_list = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=territoryList"));
+        String _terr_list = null;
         try {
+            _terr_list = http_get("https://api.wynncraft.com/public_api.php?action=territoryList");
+            JSONObject terr_list = new JSONObject(_terr_list);
             terrlog_log(terrlog_cache, terr_list);
             terrlog_cache = terr_list;
         } catch (Exception e) {
-            System.out.println(terr_list);
+            System.out.println(_terr_list);
             e.printStackTrace();
         }
     }
