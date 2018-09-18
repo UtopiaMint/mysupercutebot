@@ -44,6 +44,16 @@ public class War {
                 stmt.setString(1, guild);
                 stmt.setInt(2, id);
                 stmt.execute();
+                // update or insert to aggregated data
+                stmt = conn.prepareStatement("update war_log_aggregated set total=total+1 where guild=?");
+                stmt.setString(1, guild);
+                int affected = stmt.executeUpdate();
+                if (affected < 1) {
+                    // insert
+                    stmt = conn.prepareStatement("insert into war_log_aggregated (guild, total, won) VALUES (?, 1, 0)");
+                    stmt.setString(1, guild);
+                    stmt.execute();
+                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -57,12 +67,23 @@ public class War {
             System.out.printf("adding %s\n", name);
             Connection conn = DatabaseHelper.getConnection();
             try {
+                String uuid = Functions.ign2uuid(name);
                 PreparedStatement stmt = conn.prepareStatement("insert into player_war_log (war_id, uuid, ign, guild) values (?, ?, ?, ?)");
                 stmt.setInt(1, id);
-                stmt.setString(2, Functions.ign2uuid(name));
+                stmt.setString(2, uuid);
                 stmt.setString(3, name);
                 stmt.setString(4, guild);
                 stmt.execute();
+                // update or insert to aggregated data
+                stmt = conn.prepareStatement("update player_war_log_aggregated set total=total+1 where uuid=?");
+                stmt.setString(1, uuid);
+                int affected = stmt.executeUpdate();
+                if (affected < 1) {
+                    // insert
+                    stmt = conn.prepareStatement("insert into player_war_log_aggregated (uuid, total, won, survived) VALUES (?, 1, 0, 0)");
+                    stmt.setString(1, uuid);
+                    stmt.execute();
+                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -98,6 +119,7 @@ public class War {
             stmt.setString(1, name);
             stmt.setInt(2, id);
             stmt.execute();
+            // dont need to update aggregated stats cuz +0
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -148,11 +170,20 @@ public class War {
                     ResultSet rs = stmt.executeQuery();
                     if (rs.next() && rs.getInt(1) >= 1) {
                         // congrats on winning
+                        stmt = conn.prepareStatement("update player_war_log_aggregated set won=won+1 where uuid in (select uuid from player_war_log where war_id=?)");
+                        stmt.setInt(1, id);
+                        stmt.execute();
                         System.out.printf("found a terr log for %s war %d, iteration %d\n", guild, id, i - 6);
                         stmt = conn.prepareStatement("update player_war_log set won=1 where war_id=?");
                         stmt.setInt(1, id);
                         stmt.execute();
+                        stmt = conn.prepareStatement("update player_war_log_aggregated set survived=survived+1 where uuid in (select uuid from player_war_log where war_id=? and survived is null)");
+                        stmt.setInt(1, id);
+                        stmt.execute();
                         stmt = conn.prepareStatement("update player_war_log set survived=1 where war_id=? and survived is null");
+                        stmt.setInt(1, id);
+                        stmt.execute();
+                        stmt = conn.prepareStatement("update war_log_aggregated set won=won+1 where guild=(select guild from war_log where id=?)");
                         stmt.setInt(1, id);
                         stmt.execute();
                         stmt = conn.prepareStatement("update war_log set terr_entry=? where id=?");

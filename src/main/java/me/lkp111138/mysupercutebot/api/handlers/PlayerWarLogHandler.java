@@ -2,12 +2,14 @@ package me.lkp111138.mysupercutebot.api.handlers;
 
 import com.sun.net.httpserver.HttpExchange;
 import me.lkp111138.mysupercutebot.helpers.DatabaseHelper;
+import me.lkp111138.mysupercutebot.helpers.Functions;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,13 +35,21 @@ public class PlayerWarLogHandler extends AbstractHandler {
         }
         String player = exchange.getRequestURI().getPath().substring(19);
         String _before = _GET.get("before");
+        String terr = _GET.get("terr");
         if (_before == null) {
             _before = "2147483647";
         }
         int before = Integer.parseInt(_before);
         Connection conn = DatabaseHelper.getConnection();
-        PreparedStatement stmt = conn.prepareStatement("select w.id, p.ign, p.guild, p.survived, p.won, w.server, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired from player_war_log p, war_log w, terr_log t where uuid=(select uuid from player_war_log where ign=? order by id desc limit 1) and p.war_id=w.id and w.terr_entry=t.id and w.start_time<? order by w.id desc limit 5;");
-        stmt.setString(1, player);
+        String uuid = Functions.ign2uuid(player);
+        PreparedStatement stmt;
+        if (terr == null) {
+            stmt = conn.prepareStatement("SELECT w.id, p.ign, p.guild, p.survived, p.won, w.server, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired FROM player_war_log p left join war_log w on p.war_id=w.id left join terr_log t on w.terr_entry=t.id WHERE UUID=? AND w.start_time<? ORDER BY w.id DESC LIMIT 5;");
+        } else {
+            stmt = conn.prepareStatement("SELECT w.id, p.ign, p.guild, p.survived, p.won, w.server, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired FROM player_war_log p left join war_log w on p.war_id=w.id left join terr_log t on w.terr_entry=t.id WHERE UUID=? AND w.start_time<? and t.terr_name=? ORDER BY w.id DESC LIMIT 5;");
+            stmt.setString(3, terr);
+        }
+        stmt.setString(1, uuid);
         stmt.setInt(2, before);
         ResultSet rs = stmt.executeQuery();
         JSONObject resp = new JSONObject();
@@ -60,7 +70,7 @@ public class PlayerWarLogHandler extends AbstractHandler {
             data.put("defender", rs.getString(9));
             data.put("terr_name", rs.getString(10));
             data.put("acquired", rs.getInt(11));
-            data.put("verdict", rs.getString(10) != null || rs.getInt(8) + 120 >= now);
+            data.put("verdict", rs.getString(10) != null || (rs.getInt(8) > 0 && rs.getInt(8) + 120 <= now));
             data.put("players", new JSONArray());
             array.put(data);
         }
@@ -70,7 +80,6 @@ public class PlayerWarLogHandler extends AbstractHandler {
                 q_marks.add("?");
             }
             stmt.close();
-            System.out.println("select war_id, ign, survived, won from player_war_log where war_id in (" + String.join(",", q_marks) + ")");
             stmt = conn.prepareStatement("select war_id, ign, survived, won from player_war_log where war_id in (" + String.join(",", q_marks) + ")");
             for (int i = 0; i < war_ids.size(); ++i) {
                 stmt.setInt(i + 1, war_ids.get(i));
@@ -80,7 +89,16 @@ public class PlayerWarLogHandler extends AbstractHandler {
                 array.getJSONObject(war_ids.indexOf(rs.getInt(1))).getJSONArray("players").put(new JSONObject().put("player", rs.getString(2)).put("survived", rs.getInt(3)).put("won", rs.getInt(4)));
             }
         }
-        resp.put("data", array);
+        resp.put("wars", array);
+        stmt = conn.prepareStatement("select total, won, survived from player_war_log_aggregated where uuid=?");
+        stmt.setString(1, uuid);
+        rs = stmt.executeQuery();
+        if (rs.next()) {
+            resp.put("aggregated", new JSONObject().put("total", rs.getInt(1)).put("won", rs.getInt(2)).put("survived", rs.getInt(3)));
+        } else  {
+            // no row
+            resp.put("aggregated", JSONObject.NULL);
+        }
         return new HttpResponse().setRcode(200).setResponse(resp.toString());
     }
 }

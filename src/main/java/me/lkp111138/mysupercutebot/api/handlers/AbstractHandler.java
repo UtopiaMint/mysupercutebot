@@ -2,6 +2,7 @@ package me.lkp111138.mysupercutebot.api.handlers;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import me.lkp111138.mysupercutebot.helpers.RateLimiter;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,6 +40,8 @@ public abstract class AbstractHandler implements HttpHandler {
             fuck(exchange, new HttpResponse().setResponse("").setRcode(403));
             return;
         }
+        int tokens = RateLimiter.get(addr).consume();
+        exchange.getResponseHeaders().add("X-Ratelimit-Remaining", String.valueOf(tokens / 1000));
 //        System.out.printf("[%.3f] Starting handler\n", 0.001 * (System.currentTimeMillis() - start));
         int length = -1;
         try {
