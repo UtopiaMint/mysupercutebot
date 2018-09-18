@@ -41,13 +41,17 @@ public abstract class AbstractHandler implements HttpHandler {
             return;
         }
         int tokens = RateLimiter.get(addr).consume();
-        exchange.getResponseHeaders().add("X-Ratelimit-Remaining", String.valueOf(tokens / 1000));
+        exchange.getResponseHeaders().add("X-Ratelimit-Remaining", String.valueOf(tokens / 2000));
 //        System.out.printf("[%.3f] Starting handler\n", 0.001 * (System.currentTimeMillis() - start));
         int length = -1;
         try {
             HttpResponse response = new HttpResponse().setResponse("{\"success\": false}");
             try {
-                response = realhandle(exchange);
+                if (tokens >= 0) {
+                    response = realhandle(exchange);
+                } else {
+                    response = new HttpResponse().setResponse("{\"success\": false}").setRcode(429);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
