@@ -16,6 +16,7 @@ public class RateLimiter {
     public int consume() {
         long now = System.currentTimeMillis();
         tokens = (int) Math.min(120000, tokens + (now - last_req) * 2);
+        last_req = now;
         if (tokens >= 1000) {
             tokens -= 1000;
             return tokens;
