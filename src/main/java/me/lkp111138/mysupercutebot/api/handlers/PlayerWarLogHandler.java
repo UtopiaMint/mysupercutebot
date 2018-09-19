@@ -35,22 +35,33 @@ public class PlayerWarLogHandler extends AbstractHandler {
         }
         String player = exchange.getRequestURI().getPath().substring(19);
         String _before = _GET.get("before");
+        String _after = _GET.get("after");
         String terr = _GET.get("terr");
-        if (_before == null) {
-            _before = "2147483647";
-        }
-        int before = Integer.parseInt(_before);
         Connection conn = DatabaseHelper.getConnection();
         String uuid = Functions.ign2uuid(player);
         PreparedStatement stmt;
-        if (terr == null) {
-            stmt = conn.prepareStatement("SELECT w.id, p.ign, p.guild, p.survived, p.won, w.server, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired FROM player_war_log p left join war_log w on p.war_id=w.id left join terr_log t on w.terr_entry=t.id WHERE UUID=? AND w.start_time<? ORDER BY w.id DESC LIMIT 5;");
-        } else {
-            stmt = conn.prepareStatement("SELECT w.id, p.ign, p.guild, p.survived, p.won, w.server, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired FROM player_war_log p left join war_log w on p.war_id=w.id left join terr_log t on w.terr_entry=t.id WHERE UUID=? AND w.start_time<? and t.terr_name=? ORDER BY w.id DESC LIMIT 5;");
-            stmt.setString(3, terr);
+        String clauses = "";
+        if (terr != null) {
+            clauses += " and t.terr_name=?";
         }
+        if (_before != null) {
+            clauses += " and w.start_time<?";
+        }
+        if (_after != null) {
+            clauses += " and w.start_time>?";
+        }
+        stmt = conn.prepareStatement("SELECT w.id, p.ign, p.guild, p.survived, p.won, w.server, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired FROM player_war_log p left join war_log w on p.war_id=w.id left join terr_log t on w.terr_entry=t.id WHERE UUID=?" + clauses + " ORDER BY w.id DESC LIMIT 5;");
         stmt.setString(1, uuid);
-        stmt.setInt(2, before);
+        int arg = 2;
+        if (terr != null) {
+            stmt.setString(arg++, terr);
+        }
+        if (_before != null) {
+            stmt.setInt(arg++, Integer.parseInt(_before));
+        }
+        if (_after != null) {
+            stmt.setInt(arg, Integer.parseInt(_after));
+        }
         ResultSet rs = stmt.executeQuery();
         JSONObject resp = new JSONObject();
         resp.put("success", "true");

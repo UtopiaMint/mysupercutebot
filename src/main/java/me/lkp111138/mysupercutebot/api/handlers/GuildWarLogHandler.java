@@ -34,21 +34,41 @@ public class GuildWarLogHandler extends AbstractHandler {
         }
         String guild = exchange.getRequestURI().getPath().substring(18);
         String _before = _GET.get("before");
-        if (_before == null) {
-            _before = "2147483647";
-        }
-        int before = Integer.parseInt(_before);
+        String _after = _GET.get("after");
         Connection conn = DatabaseHelper.getConnection();
         String terr = _GET.get("terr");
         PreparedStatement stmt;
-        if (terr == null) {
-            stmt = conn.prepareStatement("select w.server, w.guild, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired, w.id from war_log w left join terr_log t on w.terr_entry=t.id where w.guild=? and w.start_time<? order by w.start_time desc limit 5;");
-        } else {
-            stmt = conn.prepareStatement("select w.server, w.guild, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired, w.id from war_log w left join terr_log t on w.terr_entry=t.id where w.guild=? and w.start_time<? and t.terr_name=? order by w.start_time desc limit 5;");
-            stmt.setString(3, terr);
+        String clauses = "";
+        if (terr != null) {
+            clauses += " and t.terr_name=?";
         }
+        if (_before != null) {
+            clauses += " and w.start_time<?";
+        }
+        if (_after != null) {
+            clauses += " and w.start_time>?";
+        }
+        if (guild.length() == 3) {
+            // is a tag
+            stmt = conn.prepareStatement("select guild from guild_tag where tag=?");
+            stmt.setString(1, guild);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                guild = rs.getString(1);
+            }
+        }
+        stmt = conn.prepareStatement("select w.server, w.guild, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired, w.id from war_log w left join terr_log t on w.terr_entry=t.id where w.guild=?" + clauses + " order by w.start_time desc limit 5;");
         stmt.setString(1, guild);
-        stmt.setInt(2, before);
+        int arg = 2;
+        if (terr != null) {
+            stmt.setString(arg++, terr);
+        }
+        if (_before != null) {
+            stmt.setInt(arg++, Integer.parseInt(_before));
+        }
+        if (_after != null) {
+            stmt.setInt(arg, Integer.parseInt(_after));
+        }
         ResultSet rs = stmt.executeQuery();
         JSONObject resp = new JSONObject();
         resp.put("success", "true");
