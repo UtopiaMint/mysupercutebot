@@ -4,10 +4,7 @@ import me.lkp111138.mysupercutebot.api.ApiServer;
 import me.lkp111138.mysupercutebot.helpers.DatabaseHelper;
 import me.lkp111138.mysupercutebot.helpers.Looper;
 
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class Main {
