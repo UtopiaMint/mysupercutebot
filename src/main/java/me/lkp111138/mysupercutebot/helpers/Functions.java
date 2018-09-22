@@ -15,7 +15,7 @@ public class Functions {
     private static OkHttpClient client = new OkHttpClient();
 
 
-    public static JSONObject guildInfo(String name) {
+    private static JSONObject guildInfo(String name) {
         // TODO: detect tags and fetch from db
         JSONObject guild = guild_cache.get(name);
         if (guild == null) {
@@ -68,13 +68,17 @@ public class Functions {
         }
     }
 
-    public static String http_get(String url) {
+    static String http_get(String url) {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
         try {
             Response response = client.newCall(request).execute();
-            return response.body().string();
+            if (response.body() != null) {
+                return response.body().string();
+            } else {
+                return "";
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return "{}";

@@ -80,8 +80,9 @@ public class War {
                 int affected = stmt.executeUpdate();
                 if (affected < 1) {
                     // insert
-                    stmt = conn.prepareStatement("insert into player_war_log_aggregated (uuid, total, won, survived) VALUES (?, 1, 0, 0)");
+                    stmt = conn.prepareStatement("insert into player_war_log_aggregated (uuid, guild, total, won, survived) VALUES (?, ?, 1, 0, 0)");
                     stmt.setString(1, uuid);
+                    stmt.setString(2, guild);
                     stmt.execute();
                 }
             } catch (SQLException e) {
@@ -170,15 +171,17 @@ public class War {
                     ResultSet rs = stmt.executeQuery();
                     if (rs.next() && rs.getInt(1) >= 1) {
                         // congrats on winning
-                        stmt = conn.prepareStatement("update player_war_log_aggregated set won=won+1 where uuid in (select uuid from player_war_log where war_id=?)");
+                        stmt = conn.prepareStatement("update player_war_log_aggregated set won=won+1 where uuid in (select uuid from player_war_log where war_id=?) and guild=?");
                         stmt.setInt(1, id);
+                        stmt.setString(2, guild);
                         stmt.execute();
                         System.out.printf("found a terr log for %s war %d, iteration %d\n", guild, id, i - 6);
                         stmt = conn.prepareStatement("update player_war_log set won=1 where war_id=?");
                         stmt.setInt(1, id);
                         stmt.execute();
-                        stmt = conn.prepareStatement("update player_war_log_aggregated set survived=survived+1 where uuid in (select uuid from player_war_log where war_id=? and survived is null)");
+                        stmt = conn.prepareStatement("update player_war_log_aggregated set survived=survived+1 where uuid in (select uuid from player_war_log where war_id=? and survived is null) and guild=?");
                         stmt.setInt(1, id);
+                        stmt.setString(2, guild);
                         stmt.execute();
                         stmt = conn.prepareStatement("update player_war_log set survived=1 where war_id=? and survived is null");
                         stmt.setInt(1, id);

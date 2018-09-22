@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static me.lkp111138.mysupercutebot.helpers.Looper.tag2name;
+
 public class GuildWarLogHandler extends AbstractHandler {
     @Override
     public HttpResponse realhandle(HttpExchange exchange) throws Exception {
@@ -50,12 +52,7 @@ public class GuildWarLogHandler extends AbstractHandler {
         }
         if (guild.length() == 3) {
             // is a tag
-            stmt = conn.prepareStatement("select guild from guild_tag where tag=?");
-            stmt.setString(1, guild);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                guild = rs.getString(1);
-            }
+            guild = tag2name(guild);
         }
         stmt = conn.prepareStatement("select w.server, w.guild, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired, w.id from war_log w left join terr_log t on w.terr_entry=t.id where w.guild=?" + clauses + " order by w.start_time desc limit 5;");
         stmt.setString(1, guild);

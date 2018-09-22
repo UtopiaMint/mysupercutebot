@@ -39,6 +39,7 @@ public class PlayerWarLogHandler extends AbstractHandler {
         String terr = _GET.get("terr");
         Connection conn = DatabaseHelper.getConnection();
         String uuid = Functions.ign2uuid(player);
+        String player_guild = Functions.playerInfo(player).getJSONObject("guild").getString("name");
         PreparedStatement stmt;
         String clauses = "";
         if (terr != null) {
@@ -50,9 +51,10 @@ public class PlayerWarLogHandler extends AbstractHandler {
         if (_after != null) {
             clauses += " and w.start_time>?";
         }
-        stmt = conn.prepareStatement("SELECT w.id, p.ign, p.guild, p.survived, p.won, w.server, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired FROM player_war_log p left join war_log w on p.war_id=w.id left join terr_log t on w.terr_entry=t.id WHERE UUID=?" + clauses + " ORDER BY w.id DESC LIMIT 5;");
+        stmt = conn.prepareStatement("SELECT w.id, p.ign, p.guild, p.survived, p.won, w.server, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired FROM player_war_log p left join war_log w on p.war_id=w.id left join terr_log t on w.terr_entry=t.id WHERE UUID=? and w.guild=?" + clauses + " ORDER BY w.id DESC LIMIT 5;");
         stmt.setString(1, uuid);
-        int arg = 2;
+        stmt.setString(2, player_guild);
+        int arg = 3;
         if (terr != null) {
             stmt.setString(arg++, terr);
         }
@@ -101,11 +103,12 @@ public class PlayerWarLogHandler extends AbstractHandler {
             }
         }
         resp.put("wars", array);
-        stmt = conn.prepareStatement("select total, won, survived from player_war_log_aggregated where uuid=?");
+        stmt = conn.prepareStatement("select total, won, survived from player_war_log_aggregated where uuid=? and guild=?");
         stmt.setString(1, uuid);
+        stmt.setString(2, player_guild);
         rs = stmt.executeQuery();
         if (rs.next()) {
-            resp.put("aggregated", new JSONObject().put("total", rs.getInt(1)).put("won", rs.getInt(2)).put("survived", rs.getInt(3)));
+            resp.put("aggregated", new JSONObject().put("total", rs.getInt(1)).put("won", rs.getInt(2)).put("survived", rs.getInt(3)).put("guild", player_guild));
         } else  {
             // no row
             resp.put("aggregated", JSONObject.NULL);

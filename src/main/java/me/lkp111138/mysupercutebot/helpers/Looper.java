@@ -6,6 +6,7 @@ import org.json.JSONObject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -20,6 +21,7 @@ public class Looper extends Thread {
     private int last_xp_log = -1;
     private List<String> war_servers = new ArrayList<>();
 
+    @SuppressWarnings("InfiniteLoopStatement")
     @Override
     public void run() {
         for (;;) {
@@ -159,5 +161,22 @@ public class Looper extends Thread {
         }
         TimeZone tz = Calendar.getInstance().getTimeZone();
         return date.getTime() + tz.getRawOffset() + 14400000; // wynn is at gmt-4
+    }
+
+    public static String tag2name(String tag) {
+        Connection conn = DatabaseHelper.getConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement("select guild from guild_tag where tag=?");
+            stmt.setString(1, tag);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString(1);
+            } else {
+                return "";
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 }

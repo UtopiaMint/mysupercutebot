@@ -10,6 +10,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
 
+import static me.lkp111138.mysupercutebot.helpers.Looper.tag2name;
+
 public class GuildPlayerWarLeaderboardHandler extends AbstractHandler {
     @Override
     public HttpResponse realhandle(HttpExchange exchange) throws Exception {
@@ -36,12 +38,7 @@ public class GuildPlayerWarLeaderboardHandler extends AbstractHandler {
         Connection conn = DatabaseHelper.getConnection();
         if (guild.length() == 3) {
             // is a tag
-            PreparedStatement stmt = conn.prepareStatement("select guild from guild_tag where tag=?");
-            stmt.setString(1, guild);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                guild = rs.getString(1);
-            }
+            guild = tag2name(guild);
         }
         int page = Integer.parseInt(_page);
         PreparedStatement stmt = conn.prepareStatement("select distinct p.uuid, l.ign, p.total, p.won, p.survived from player_war_log_aggregated p left join player_war_log l on p.uuid=l.uuid where l.guild=? order by p.total desc, p.won desc limit 10 offset ?");
