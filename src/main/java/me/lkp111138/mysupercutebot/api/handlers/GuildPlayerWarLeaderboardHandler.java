@@ -41,7 +41,7 @@ public class GuildPlayerWarLeaderboardHandler extends AbstractHandler {
             guild = tag2name(guild);
         }
         int page = Integer.parseInt(_page);
-        PreparedStatement stmt = conn.prepareStatement("select distinct p.uuid, l.ign, p.total, p.won, p.survived from player_war_log_aggregated p left join player_war_log l on p.uuid=l.uuid where l.guild=? order by p.total desc, p.won desc limit 10 offset ?");
+        PreparedStatement stmt = conn.prepareStatement("select distinct p.uuid, l.ign, p.total, p.won, p.survived from player_war_log_aggregated p left join player_war_log l on p.uuid=l.uuid where p.guild=? order by p.total desc, p.won desc limit 10 offset ?");
         stmt.setInt(2, page * 10);
         stmt.setString(1, guild);
         ResultSet rs = stmt.executeQuery();

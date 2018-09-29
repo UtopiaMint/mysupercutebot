@@ -15,7 +15,7 @@ public class Functions {
     private static OkHttpClient client = new OkHttpClient();
 
 
-    private static JSONObject guildInfo(String name) {
+    public static JSONObject guildInfo(String name) {
         // TODO: detect tags and fetch from db
         JSONObject guild = guild_cache.get(name);
         if (guild == null) {
