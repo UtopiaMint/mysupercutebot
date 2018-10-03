@@ -86,12 +86,12 @@ public class PlayerWarLogHandler extends AbstractHandler {
             data.put("players", new JSONArray());
             array.put(data);
         }
+        stmt.close();
         if (war_ids.size() > 0) {
             List<String> q_marks = new ArrayList<>();
             for (int ignored : war_ids) {
                 q_marks.add("?");
             }
-            stmt.close();
             stmt = conn.prepareStatement("select war_id, ign, survived, won from player_war_log where war_id in (" + String.join(",", q_marks) + ")");
             for (int i = 0; i < war_ids.size(); ++i) {
                 stmt.setInt(i + 1, war_ids.get(i));

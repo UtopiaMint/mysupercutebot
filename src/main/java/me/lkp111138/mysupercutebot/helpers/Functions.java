@@ -41,7 +41,7 @@ public class Functions {
             return obj;
         } else {
             int ts = player.getJSONObject("request").getInt("timestamp");
-            if (ts < System.currentTimeMillis() / 1000 - 20) {
+            if (ts < System.currentTimeMillis() / 1000 - 120) { // cache player info for 2mins
                 player_cache.remove(name);
                 return playerInfo(name);
             } else {
@@ -59,7 +59,7 @@ public class Functions {
             return obj.getString("id");
         } else {
             int ts = player.getInt("ts");
-            if (ts < System.currentTimeMillis() / 1000 - 600) {
+            if (ts < System.currentTimeMillis() / 1000 - 600) { // cache player uuid for 10mins
                 uuid_cache.remove(ign);
                 return ign2uuid(ign);
             } else {

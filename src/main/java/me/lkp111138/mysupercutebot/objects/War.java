@@ -63,6 +63,9 @@ public class War {
     private void addPlayer(String name) {
         System.out.printf("trying to add %s\n", name);
         started = true;
+        if (guild == null) {
+            guild = Functions.playerInfo(name).getJSONObject("guild").getString("name");
+        }
         if (players.add(name)) {
             System.out.printf("adding %s\n", name);
             Connection conn = DatabaseHelper.getConnection();
