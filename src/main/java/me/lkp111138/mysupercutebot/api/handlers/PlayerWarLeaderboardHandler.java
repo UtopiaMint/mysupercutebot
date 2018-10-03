@@ -35,7 +35,7 @@ public class PlayerWarLeaderboardHandler extends AbstractHandler {
         }
         int page = Integer.parseInt(_page);
         Connection conn = DatabaseHelper.getConnection();
-        PreparedStatement stmt = conn.prepareStatement("select distinct p.uuid, p.total, p.won, p.survived from player_war_log_aggregated p order by p.total desc, p.won desc limit 10 offset ?");
+        PreparedStatement stmt = conn.prepareStatement("select p.uuid, p.total, p.won, p.survived from player_war_stats p order by p.total desc, p.won desc limit 10 offset ?");
         stmt.setInt(1, page * 10);
         ResultSet rs = stmt.executeQuery();
         JSONObject resp = new JSONObject().put("success", true);
