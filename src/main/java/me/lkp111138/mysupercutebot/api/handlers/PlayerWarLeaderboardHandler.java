@@ -48,18 +48,20 @@ public class PlayerWarLeaderboardHandler extends AbstractHandler {
             q_marks.add("?");
         }
         // get the ign
-        stmt = conn.prepareStatement("select uuid, ign from player_war_log where uuid in (" + String.join(",", q_marks) + ")");
-        int i = 1;
-        for (String uuid : names.keySet()) {
-            stmt.setString(i++, uuid);
-        }
-        rs = stmt.executeQuery();
-        while (rs.next()) {
-            names.put(rs.getString(1), rs.getString(2));
-        }
-        for (i = 0; i < players.length(); ++i) {
-            JSONObject player = players.getJSONObject(i);
-            player.put("player", names.get(player.getString("uuid")));
+        if (q_marks.size() > 0) {
+            stmt = conn.prepareStatement("select uuid, ign from player_war_log where uuid in (" + String.join(",", q_marks) + ")");
+            int i = 1;
+            for (String uuid : names.keySet()) {
+                stmt.setString(i++, uuid);
+            }
+            rs = stmt.executeQuery();
+            while (rs.next()) {
+                names.put(rs.getString(1), rs.getString(2));
+            }
+            for (i = 0; i < players.length(); ++i) {
+                JSONObject player = players.getJSONObject(i);
+                player.put("player", names.get(player.getString("uuid")));
+            }
         }
         resp.put("players", players);
         return new HttpResponse().setRcode(200).setResponse(resp.toString());
