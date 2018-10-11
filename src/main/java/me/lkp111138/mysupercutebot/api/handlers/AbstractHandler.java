@@ -53,8 +53,8 @@ public abstract class AbstractHandler implements HttpHandler {
                     response = new HttpResponse().setResponse("{\"success\": false, \"reason\": \"rate limited exceed\"}").setRcode(429);
                 }
             } catch (Exception e) {
-                response = new HttpResponse().setResponse("{\"success\": false, \"reason\": \"" + e.getMessage().replace("\"", "\\") + "\"}");
                 e.printStackTrace();
+                response = new HttpResponse().setResponse("{\"success\": false, \"reason\": \"" + e.getMessage().replace("\"", "\\") + "\"}");
             }
             length = fuck(exchange, response);
         } catch (Exception e) {

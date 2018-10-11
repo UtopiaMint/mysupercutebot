@@ -21,6 +21,8 @@ public class ApiServer implements Runnable {
             server.createContext("/v1/warlogs/leaderboard/player", new PlayerWarLeaderboardHandler());
             server.createContext("/v1/warlogs/leaderboard/guild/", new GuildPlayerWarLeaderboardHandler());
             server.createContext("/v1/guildinfo/", new GuildInfoHandler());
+            server.createContext("/v1/forums/", new ForumThreadListHandler());
+            server.createContext("/v1/status", new StatusHandler());
             server.setExecutor(pool);
             server.start();
         } catch (IOException e) {

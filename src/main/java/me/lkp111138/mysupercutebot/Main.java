@@ -10,15 +10,21 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public class Main {
     // ping wynn api every 20secs yay
     private static ScheduledThreadPoolExecutor pool = new ScheduledThreadPoolExecutor(2);
+    private static long started;
 
     public static void main(String[] args) throws ClassNotFoundException, SQLException {
         // set up sql connection
         DatabaseHelper.init();
         new Thread(new ApiServer()).start();
+        started = System.currentTimeMillis();
         new Looper().run();
     }
 
     public static ScheduledThreadPoolExecutor getPool() {
         return pool;
+    }
+
+    public static long getStarted() {
+        return started;
     }
 }
