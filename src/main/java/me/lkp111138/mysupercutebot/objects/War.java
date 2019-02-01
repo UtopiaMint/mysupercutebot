@@ -39,21 +39,10 @@ public class War {
             this.guild = guild;
             guild_war.put(guild, this);
             Connection conn = DatabaseHelper.getConnection();
-            try {
-                PreparedStatement stmt = conn.prepareStatement("update war_log set guild=? where id=?");
+            try (PreparedStatement stmt = conn.prepareStatement("update war_log set guild=? where id=?")) {
                 stmt.setString(1, guild);
                 stmt.setInt(2, id);
                 stmt.execute();
-                // update or insert to aggregated data
-                stmt = conn.prepareStatement("update war_log_aggregated set total=total+1 where guild=?");
-                stmt.setString(1, guild);
-                int affected = stmt.executeUpdate();
-                if (affected < 1) {
-                    // insert
-                    stmt = conn.prepareStatement("insert into war_log_aggregated (guild, total, won) VALUES (?, 1, 0)");
-                    stmt.setString(1, guild);
-                    stmt.execute();
-                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -64,30 +53,22 @@ public class War {
         System.out.printf("trying to add %s\n", name);
         started = true;
         if (guild == null) {
-            guild = Functions.playerInfo(name).getJSONObject("guild").getString("name");
+            try {
+                guild = Functions.playerInfo(name).getJSONObject("guild").getString("name");
+            } catch (NullPointerException ignored) {
+                // blame wynn api
+            }
         }
         if (players.add(name)) {
             System.out.printf("adding %s\n", name);
             Connection conn = DatabaseHelper.getConnection();
-            try {
+            try (PreparedStatement stmt = conn.prepareStatement("insert into player_war_log (war_id, uuid, ign, guild) values (?, ?, ?, ?)")){
                 String uuid = Functions.ign2uuid(name);
-                PreparedStatement stmt = conn.prepareStatement("insert into player_war_log (war_id, uuid, ign, guild) values (?, ?, ?, ?)");
                 stmt.setInt(1, id);
                 stmt.setString(2, uuid);
                 stmt.setString(3, name);
                 stmt.setString(4, guild);
                 stmt.execute();
-                // update or insert to aggregated data
-                stmt = conn.prepareStatement("update player_war_log_aggregated set total=total+1 where uuid=?");
-                stmt.setString(1, uuid);
-                int affected = stmt.executeUpdate();
-                if (affected < 1) {
-                    // insert
-                    stmt = conn.prepareStatement("insert into player_war_log_aggregated (uuid, guild, total, won, survived) VALUES (?, ?, 1, 0, 0)");
-                    stmt.setString(1, uuid);
-                    stmt.setString(2, guild);
-                    stmt.execute();
-                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -118,8 +99,7 @@ public class War {
     private void removePlayer(String name) {
         // is dead
         Connection conn = DatabaseHelper.getConnection();
-        try {
-            PreparedStatement stmt = conn.prepareStatement("update player_war_log set survived=0 where ign=? and war_id=?");
+        try (PreparedStatement stmt = conn.prepareStatement("update player_war_log set survived=0 where ign=? and war_id=?")) {
             stmt.setString(1, name);
             stmt.setInt(2, id);
             stmt.execute();
@@ -143,9 +123,8 @@ public class War {
         closed = true;
         guild_war.remove(guild);
         server_war.remove(server);
-        PreparedStatement stmt1;
-        try {
-            stmt1 = DatabaseHelper.getConnection().prepareStatement("update war_log set end_time=? where id=?");
+        ;
+        try (PreparedStatement stmt1 = DatabaseHelper.getConnection().prepareStatement("update war_log set end_time=? where id=?")) {
             stmt1.setInt(1, end_time);
             stmt1.setInt(2, id);
             stmt1.execute();
@@ -165,38 +144,29 @@ public class War {
                     // search for a terr gain event
                     int now = (int) (System.currentTimeMillis() / 1000);
                     Connection conn = DatabaseHelper.getConnection();
-                    try {
+                    try (PreparedStatement stmt = conn.prepareStatement("select count(*), max(id) from terr_log where attacker=? and acquired>=? and acquired<=?")) {
                         // terr gain time < war end time
                         // terr gain time + 50 > war end time
-                        PreparedStatement stmt = conn.prepareStatement("select count(*), max(id) from terr_log where attacker=? and acquired>=? and acquired<=?");
                         stmt.setString(1, guild);
                         stmt.setInt(2, end_time - 80);
                         stmt.setInt(3, end_time); // i don't think the war ends before you acquire
                         ResultSet rs = stmt.executeQuery();
                         if (rs.next() && rs.getInt(1) >= 1) {
                             // congrats on winning
-                            stmt = conn.prepareStatement("update player_war_log_aggregated set won=won+1 where uuid in (select uuid from player_war_log where war_id=?) and guild=?");
-                            stmt.setInt(1, id);
-                            stmt.setString(2, guild);
-                            stmt.execute();
                             System.out.printf("found a terr log for %s war %d, iteration %d\n", guild, id, i - 6);
-                            stmt = conn.prepareStatement("update player_war_log set won=1 where war_id=?");
-                            stmt.setInt(1, id);
-                            stmt.execute();
-                            stmt = conn.prepareStatement("update player_war_log_aggregated set survived=survived+1 where uuid in (select uuid from player_war_log where war_id=? and survived is null) and guild=?");
-                            stmt.setInt(1, id);
-                            stmt.setString(2, guild);
-                            stmt.execute();
-                            stmt = conn.prepareStatement("update player_war_log set survived=1 where war_id=? and survived is null");
-                            stmt.setInt(1, id);
-                            stmt.execute();
-                            stmt = conn.prepareStatement("update war_log_aggregated set won=won+1 where guild=(select guild from war_log where id=?)");
-                            stmt.setInt(1, id);
-                            stmt.execute();
-                            stmt = conn.prepareStatement("update war_log set terr_entry=? where id=?");
-                            stmt.setInt(1, rs.getInt(2));
-                            stmt.setInt(2, id);
-                            stmt.execute();
+                            try (PreparedStatement stmt1 = conn.prepareStatement("update player_war_log set won=1 where war_id=?")) {
+                                stmt1.setInt(1, id);
+                                stmt1.execute();
+                            }
+                            try (PreparedStatement stmt1 = conn.prepareStatement("update player_war_log set survived=1 where war_id=? and survived is null")) {
+                                stmt1.setInt(1, id);
+                                stmt1.execute();
+                            }
+                            try (PreparedStatement stmt1 = conn.prepareStatement("update war_log set terr_entry=? where id=?")){
+                                stmt1.setInt(1, rs.getInt(2));
+                                stmt1.setInt(2, id);
+                                stmt1.execute();
+                            }
                             return;
                         }
                         System.out.printf("records found： %d\n", rs.getInt(1));
@@ -207,8 +177,7 @@ public class War {
                 }
                 // if this is reached then u lost oof
                 System.out.printf("didnt find a terr log for %s war %d\n", guild, id);
-                try {
-                    PreparedStatement stmt = DatabaseHelper.getConnection().prepareStatement("update player_war_log set survived=0, won=0 where war_id=?");
+                try (PreparedStatement stmt = DatabaseHelper.getConnection().prepareStatement("update player_war_log set survived=0, won=0 where war_id=?")) {
                     stmt.setInt(1, id);
                     stmt.execute();
                 } catch (SQLException e) {

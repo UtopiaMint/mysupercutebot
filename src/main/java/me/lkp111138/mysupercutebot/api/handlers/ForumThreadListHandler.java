@@ -38,7 +38,8 @@ public class ForumThreadListHandler extends AbstractHandler {
             Element block3 = elem.selectFirst("div.lastPost > dl");
             Element last_post = block3.selectFirst("dt > a");
             String by_username = last_post.text();
-            String by_uid = last_post.attr("href").split("\\.")[1].split("/")[0];
+            String[] _by_uid = last_post.attr("href").split("\\.");
+            String by_uid = _by_uid[_by_uid.length - 1].split("/")[0];
             Element abbr = block3.selectFirst("dd > a > span");
 //            System.out.println(block3);
             String last_post_time = "";

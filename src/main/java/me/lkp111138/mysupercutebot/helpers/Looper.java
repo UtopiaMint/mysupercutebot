@@ -24,6 +24,7 @@ public class Looper extends Thread {
     @SuppressWarnings("InfiniteLoopStatement")
     @Override
     public void run() {
+
         for (;;) {
             long last_run = System.currentTimeMillis();
             Date date = new Date(last_run);
@@ -35,6 +36,8 @@ public class Looper extends Thread {
             terrlog();
             // xp log
             xplog();
+            // look for new guilds
+
             try {
                 sleep(Math.max(0, last_run + 20000 - System.currentTimeMillis()));
             } catch (InterruptedException e) {
@@ -46,9 +49,7 @@ public class Looper extends Thread {
     private void xplog() {
         String _xp = null;
         try {
-            _xp = http_get("https://api.wynncraft.com/public_api.php?action=statsLeaderboard&type=guild&timeframe=alltime");
-            JSONObject xp = new JSONObject(_xp);
-            xp_log(xp);
+            xp_log();
         } catch (Exception e) {
             System.out.println(_xp);
             e.printStackTrace();
@@ -82,7 +83,9 @@ public class Looper extends Thread {
     }
 
     private void warlog_log(JSONObject last, JSONObject now) {
-        if (now == null || last == null) return;
+        if (now == null || last == null) {
+            return;
+        }
         // normal -> war
         List<String> removed = new ArrayList<>();
         for (String server : war_servers) {
@@ -133,20 +136,31 @@ public class Looper extends Thread {
         }
     }
 
-    private void xp_log(JSONObject data) {
-        int ts = data.getJSONObject("request").getInt("timestamp");
-        if (ts > last_xp_log + 1800) {
+    private void xp_log() {
+        int _ts = (int) (System.currentTimeMillis() / 1000);
+        if (_ts > last_xp_log + 1800) {
+            System.out.printf("now is %d %d and last xp log is %d, refreshing\n", System.currentTimeMillis(), _ts, last_xp_log);
+            String _data = http_get("https://api.wynncraft.com/public_api.php?action=statsLeaderboard&type=guild&timeframe=alltime");
+            JSONObject data = new JSONObject(_data);
+            int ts = data.getJSONObject("request").getInt("timestamp");
             last_xp_log = ts;
-            try {
-                Connection conn = DatabaseHelper.getConnection();
-                PreparedStatement stmt = conn.prepareStatement("insert into xp_log (timestamp, payload) values (?, ?)");
+            Connection conn = DatabaseHelper.getConnection();
+            try (PreparedStatement stmt = conn.prepareStatement("insert into xp_log (timestamp, payload) values (?, ?)")) {
                 JSONArray payload = data.getJSONArray("data");
+                for (int i = 0; i < payload.length(); ++i) {
+                    JSONObject guild = payload.getJSONObject(i);
+                    guild.remove("created");
+                    guild.remove("banner");
+                    guild.remove("membersCount");
+                }
                 stmt.setInt(1, ts);
                 stmt.setString(2, payload.toString());
                 stmt.execute();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+        } else {
+            System.out.printf("now is %d %d and last xp log is %d, not refreshing\n", System.currentTimeMillis(), _ts, last_xp_log);
         }
     }
 
@@ -160,13 +174,12 @@ public class Looper extends Thread {
             return -1;
         }
         TimeZone tz = Calendar.getInstance().getTimeZone();
-        return date.getTime() + tz.getRawOffset() + 14400000; // wynn is at gmt-4
+        return date.getTime() + tz.getRawOffset() + 18000000; // wynn is at gmt-5 now smh
     }
 
     public static String tag2name(String tag) {
         Connection conn = DatabaseHelper.getConnection();
-        try {
-            PreparedStatement stmt = conn.prepareStatement("select guild from guild_tag where tag=?");
+        try (PreparedStatement stmt = conn.prepareStatement("select guild from guild_tag where tag=?")) {
             stmt.setString(1, tag);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
