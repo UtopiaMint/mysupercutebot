@@ -15,8 +15,7 @@ public class DatabaseHelper {
 
     /** @return war id */
     public static int new_war_server(String war_server, int start_time) {
-        try {
-            PreparedStatement stmt = connection.prepareStatement("insert into war_log (server, start_time) values (?, ?)", Statement.RETURN_GENERATED_KEYS);
+        try (PreparedStatement stmt = connection.prepareStatement("insert into war_log (server, start_time) values (?, ?)", Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, war_server);
             stmt.setInt(2, start_time);
             stmt.execute();
@@ -30,8 +29,7 @@ public class DatabaseHelper {
     }
 
     static void terr_log(String terr, String attacker, String defender, int acquired_ts, int hold_time) {
-        try {
-            PreparedStatement stmt = connection.prepareStatement("insert into terr_log (terr_name, defender, attacker, acquired, hold_time) values (?, ?, ?, ?, ?)");
+        try (PreparedStatement stmt = connection.prepareStatement("insert into terr_log (terr_name, defender, attacker, acquired, hold_time) values (?, ?, ?, ?, ?)")) {
             stmt.setString(1, terr);
             stmt.setString(2, attacker);
             stmt.setString(3, defender);

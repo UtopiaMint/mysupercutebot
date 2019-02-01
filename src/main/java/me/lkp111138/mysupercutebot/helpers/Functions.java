@@ -20,7 +20,9 @@ public class Functions {
         JSONObject guild = guild_cache.get(name);
         if (guild == null) {
             JSONObject obj = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=guildStats&command=" + name));
-            guild_cache.put(name, obj);
+            if (obj.has("request")) {
+                guild_cache.put(name, obj);
+            }
             return obj;
         } else {
             int ts = guild.getJSONObject("request").getInt("timestamp");

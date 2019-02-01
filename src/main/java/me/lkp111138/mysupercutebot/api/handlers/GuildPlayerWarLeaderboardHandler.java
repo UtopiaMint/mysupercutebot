@@ -37,41 +37,43 @@ public class GuildPlayerWarLeaderboardHandler extends AbstractHandler {
         }
         String guild = exchange.getRequestURI().getPath().substring(30);
         Connection conn = DatabaseHelper.getConnection();
+        JSONArray players = new JSONArray();
         if (guild.length() == 3) {
             // is a tag
             guild = tag2name(guild);
         }
         int page = Integer.parseInt(_page);
-        PreparedStatement stmt = conn.prepareStatement("select p.uuid, p.total, p.won, p.survived from player_war_log_aggregated p where p.guild=? order by p.total desc, p.won desc limit 10 offset ?");
-        stmt.setInt(2, page * 10);
-        stmt.setString(1, guild);
-        ResultSet rs = stmt.executeQuery();
         JSONObject resp = new JSONObject().put("success", true);
-        JSONArray players = new JSONArray();
         HashMap<String, String> names = new HashMap<>();
         ArrayList<String> q_marks = new ArrayList<>();
-        while (rs.next()) {
-            players.put(new JSONObject().put("uuid", rs.getString(1)).put("won", rs.getInt(3)).put("total", rs.getInt(2)).put("survived", rs.getInt(4)));
-            names.put(rs.getString(1), "");
-            q_marks.add("?");
-        }
-        // get the ign
-        if (q_marks.size() > 0) {
-            stmt = conn.prepareStatement("select uuid, ign from player_war_log where uuid in (" + String.join(",", q_marks) + ")");
-            int i = 1;
-            for (String uuid : names.keySet()) {
-                stmt.setString(i++, uuid);
-            }
-            rs = stmt.executeQuery();
+        try (PreparedStatement stmt = conn.prepareStatement("select p.uuid, p.total, p.won, p.survived from player_war_log_aggregated p where p.guild=? order by p.total desc, p.won desc limit 10 offset ?")) {
+            stmt.setInt(2, page * 10);
+            stmt.setString(1, guild);
+            ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                names.put(rs.getString(1), rs.getString(2));
+                players.put(new JSONObject().put("uuid", rs.getString(1)).put("won", rs.getInt(3)).put("total", rs.getInt(2)).put("survived", rs.getInt(4)));
+                names.put(rs.getString(1), "");
+                q_marks.add("?");
             }
-            for (i = 0; i < players.length(); ++i) {
-                JSONObject player = players.getJSONObject(i);
-                player.put("player", names.get(player.getString("uuid")));
-            }
+            // get the ign
         }
-        resp.put("players", players);
+        if (q_marks.size() > 0) {
+            try (PreparedStatement stmt = conn.prepareStatement("select uuid, ign from player_war_log where uuid in (" + String.join(",", q_marks) + ")")) {
+                int i = 1;
+                for (String uuid : names.keySet()) {
+                    stmt.setString(i++, uuid);
+                }
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    names.put(rs.getString(1), rs.getString(2));
+                }
+                for (i = 0; i < players.length(); ++i) {
+                    JSONObject player = players.getJSONObject(i);
+                    player.put("player", names.get(player.getString("uuid")));
+                }
+            }
+            resp.put("players", players);
+        }
         return new HttpResponse().setRcode(200).setResponse(resp.toString());
     }
 }

@@ -34,15 +34,16 @@ public class GuildWarLeaderboardHandler extends AbstractHandler {
         }
         int page = Integer.parseInt(_page);
         Connection conn = DatabaseHelper.getConnection();
-        PreparedStatement stmt = conn.prepareStatement("select guild, total, won from war_log_aggregated order by total desc limit 10 offset ?");
-        stmt.setInt(1, page * 10);
-        ResultSet rs = stmt.executeQuery();
-        JSONObject resp = new JSONObject().put("success", true);
-        JSONArray guilds = new JSONArray();
-        while (rs.next()) {
-            guilds.put(new JSONObject().put("guild", rs.getString(1)).put("won", rs.getInt(3)).put("total", rs.getInt(2)));
+        try (PreparedStatement stmt = conn.prepareStatement("select guild, total, won from war_log_aggregated order by total desc limit 10 offset ?")) {
+            stmt.setInt(1, page * 10);
+            ResultSet rs = stmt.executeQuery();
+            JSONObject resp = new JSONObject().put("success", true);
+            JSONArray guilds = new JSONArray();
+            while (rs.next()) {
+                guilds.put(new JSONObject().put("guild", rs.getString(1)).put("won", rs.getInt(3)).put("total", rs.getInt(2)));
+            }
+            resp.put("guilds", guilds);
+            return new HttpResponse().setRcode(200).setResponse(resp.toString());
         }
-        resp.put("guilds", guilds);
-        return new HttpResponse().setRcode(200).setResponse(resp.toString());
     }
 }

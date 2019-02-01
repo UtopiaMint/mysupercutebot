@@ -8,7 +8,6 @@ import org.json.JSONObject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,82 +34,67 @@ public class GuildWarLogHandler extends AbstractHandler {
             }
         }
         String guild = exchange.getRequestURI().getPath().substring(18);
-        String _before = _GET.get("before");
-        String _after = _GET.get("after");
         Connection conn = DatabaseHelper.getConnection();
-        String terr = _GET.get("terr");
-        PreparedStatement stmt;
-        String clauses = "";
-        if (terr != null) {
-            clauses += " and t.terr_name=?";
-        }
-        if (_before != null) {
-            clauses += " and w.start_time<?";
-        }
-        if (_after != null) {
-            clauses += " and w.start_time>?";
-        }
         if (guild.length() == 3) {
             // is a tag
             guild = tag2name(guild);
         }
-        stmt = conn.prepareStatement("select w.server, w.guild, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired, w.id from war_log w left join terr_log t on w.terr_entry=t.id where w.guild=?" + clauses + " order by w.start_time desc limit 5;");
-        stmt.setString(1, guild);
-        int arg = 2;
-        if (terr != null) {
-            stmt.setString(arg++, terr);
-        }
-        if (_before != null) {
-            stmt.setInt(arg++, Integer.parseInt(_before));
-        }
-        if (_after != null) {
-            stmt.setInt(arg, Integer.parseInt(_after));
-        }
-        ResultSet rs = stmt.executeQuery();
-        JSONObject resp = new JSONObject();
-        resp.put("success", "true");
-        JSONArray array = new JSONArray();
-        int now = (int) (System.currentTimeMillis() / 1000);
+        String _offset = _GET.get("offset");
         List<Integer> war_ids = new ArrayList<>();
-        while (rs.next()) {
-            JSONObject data = new JSONObject();
-            data.put("server", rs.getString(1));
-            data.put("guild", rs.getString(2));
-            data.put("start_time", rs.getInt(3));
-            data.put("end_time", rs.getInt(4));
-            data.put("defender", rs.getString(5));
-            data.put("terr_name", rs.getString(6));
-            data.put("acquired", rs.getInt(7));
-            data.put("verdict", rs.getString(6) != null || (rs.getInt(4) > 0 && rs.getInt(4) + 120 <= now));
-            data.put("players", new JSONArray());
-            war_ids.add(rs.getInt(8));
-            array.put(data);
+        JSONArray array = new JSONArray();
+        JSONObject resp = new JSONObject();
+        try (PreparedStatement stmt = conn.prepareStatement("select w.server, w.guild, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired, w.id from war_log w left join terr_log t on w.terr_entry=t.id where w.guild=? order by w.start_time desc limit 5 offset ?;")) {
+            stmt.setString(1, guild);
+            if (_offset != null) {
+                stmt.setInt(2, Integer.parseInt(_offset));
+            } else {
+                stmt.setInt(2, 0);
+            }
+            ResultSet rs = stmt.executeQuery();
+            resp.put("success", "true");
+            int now = (int) (System.currentTimeMillis() / 1000);
+            while (rs.next()) {
+                JSONObject data = new JSONObject();
+                data.put("server", rs.getString(1));
+                data.put("guild", rs.getString(2));
+                data.put("start_time", rs.getInt(3));
+                data.put("end_time", rs.getInt(4));
+                data.put("defender", rs.getString(5));
+                data.put("terr_name", rs.getString(6));
+                data.put("acquired", rs.getInt(7));
+                data.put("verdict", rs.getString(6) != null || (rs.getInt(4) > 0 && rs.getInt(4) + 120 <= now));
+                data.put("players", new JSONArray());
+                war_ids.add(rs.getInt(8));
+                array.put(data);
+            }
         }
         if (war_ids.size() > 0) {
             List<String> q_marks = new ArrayList<>();
             for (int ignored : war_ids) {
                 q_marks.add("?");
             }
-            stmt.close();
-            stmt = conn.prepareStatement("select war_id, ign, survived, won from player_war_log where war_id in (" + String.join(",", q_marks) + ")");
-            for (int i = 0; i < war_ids.size(); ++i) {
-                stmt.setInt(i + 1, war_ids.get(i));
-            }
-            rs = stmt.executeQuery();
-            while (rs.next()) {
-                array.getJSONObject(war_ids.indexOf(rs.getInt(1))).getJSONArray("players").put(new JSONObject().put("player", rs.getString(2)).put("survived", rs.getInt(3)).put("won", rs.getInt(4)));
+            try (PreparedStatement stmt = conn.prepareStatement("select war_id, ign, survived, won from player_war_log where war_id in (" + String.join(",", q_marks) + ")"))
+            {
+                for (int i = 0; i < war_ids.size(); ++i) {
+                    stmt.setInt(i + 1, war_ids.get(i));
+                }
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    array.getJSONObject(war_ids.indexOf(rs.getInt(1))).getJSONArray("players").put(new JSONObject().put("player", rs.getString(2)).put("survived", rs.getInt(3)).put("won", rs.getInt(4)));
+                }
             }
         }
         resp.put("wars", array);
-        stmt = conn.prepareStatement("select total, won from war_log_aggregated where guild=?");
-        stmt.setString(1, guild);
-        rs = stmt.executeQuery();
-        if (rs.next()) {
-            resp.put("aggregated", new JSONObject().put("total", rs.getInt(1)).put("won", rs.getInt(2)));
-        } else {
-            // no row
-            resp.put("aggregated", JSONObject.NULL);
+        try (PreparedStatement stmt = conn.prepareStatement("select count_total, count_won from war_log where guild=? order by id desc limit 1")){
+            stmt.setString(1, guild);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                resp.put("aggregated", new JSONObject().put("total", rs.getInt(1)).put("won", rs.getInt(2)));
+            } else {
+                // no row
+                resp.put("aggregated", JSONObject.NULL);
+            }
+            return new HttpResponse().setRcode(200).setResponse(resp.toString());
         }
-        return new HttpResponse().setRcode(200).setResponse(resp.toString());
     }
 }
