@@ -2,6 +2,7 @@ package me.lkp111138.mysupercutebot.helpers;
 
 import me.lkp111138.mysupercutebot.objects.War;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.sql.Connection;
@@ -12,7 +13,9 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Consumer;
 
+import static me.lkp111138.mysupercutebot.helpers.Functions.guildInfo;
 import static me.lkp111138.mysupercutebot.helpers.Functions.http_get;
 
 public class Looper extends Thread {
@@ -24,7 +27,6 @@ public class Looper extends Thread {
     @SuppressWarnings("InfiniteLoopStatement")
     @Override
     public void run() {
-
         for (;;) {
             long last_run = System.currentTimeMillis();
             Date date = new Date(last_run);
@@ -36,13 +38,58 @@ public class Looper extends Thread {
             terrlog();
             // xp log
             xplog();
-            // look for new guilds
-
             try {
                 sleep(Math.max(0, last_run + 20000 - System.currentTimeMillis()));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void newguilds() {
+        Connection conn = DatabaseHelper.getConnection();
+        try (PreparedStatement stmt = conn.prepareStatement("select tag, guild from guild_tag")) {
+            ResultSet rs = stmt.executeQuery();
+            HashMap<String, String> guilds = new HashMap<>();
+            while (rs.next()) {
+                guilds.put(rs.getString(2), rs.getString(1));
+            }
+            JSONArray guild_arr = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=guildList")).getJSONArray("guilds");
+            Iterator<Object> it = guild_arr.iterator();
+            while (it.hasNext()) {
+                String g = (String) it.next();
+                if (guilds.containsKey(g)) {
+                    guilds.remove(g);
+                    it.remove();
+                }
+            }
+            // remaining in guilds are deleted guilds
+            for (String g : guilds.keySet()) {
+                try (PreparedStatement stmt1 = conn.prepareStatement("delete from guild_tag where guild=?")) {
+                    stmt1.setString(1, g);
+                    stmt1.execute();
+                }
+            }
+            // remaining in guild_arr are new guilds
+            int size = Math.min(guild_arr.length(), 20);
+            for (int i = 0; i < size; i++) {
+                String g = guild_arr.getString(i);
+                System.out.println("\"" + g + "\"");
+                JSONObject guild = guildInfo(g);
+                try (PreparedStatement stmt1 = conn.prepareStatement("insert into guild_tag (guild, tag) values (?, ?)")) {
+                    stmt1.setString(1, g);
+                    try {
+                        stmt1.setString(2, guild.getString("prefix"));
+                        stmt1.execute();
+                    } catch (JSONException e) {
+                        System.out.println("\"" + g + "\"");
+                        System.out.println(guild);
+                    }
+                }
+            }
+            System.out.printf("new guild count: %d, deleted guild count: %d\n", guild_arr.length(), guilds.size());
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
@@ -156,6 +203,10 @@ public class Looper extends Thread {
                 stmt.setInt(1, ts);
                 stmt.setString(2, payload.toString());
                 stmt.execute();
+                // look for new guilds
+                long start = System.currentTimeMillis();
+                newguilds();
+                System.out.println(System.currentTimeMillis() - start);
             } catch (SQLException e) {
                 e.printStackTrace();
             }

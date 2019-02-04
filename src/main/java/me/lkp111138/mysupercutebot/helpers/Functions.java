@@ -19,7 +19,8 @@ public class Functions {
         // TODO: detect tags and fetch from db
         JSONObject guild = guild_cache.get(name);
         if (guild == null) {
-            JSONObject obj = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=guildStats&command=" + name));
+            // have to claim to cute to make up for trailing spaces smh
+            JSONObject obj = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=guildStats&command=" + name + "&cute=true"));
             if (obj.has("request")) {
                 guild_cache.put(name, obj);
             }
