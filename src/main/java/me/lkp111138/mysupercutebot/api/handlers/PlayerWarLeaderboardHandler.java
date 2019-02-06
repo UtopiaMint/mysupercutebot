@@ -29,41 +29,21 @@ public class PlayerWarLeaderboardHandler extends AbstractHandler {
                     break;
             }
         }
-        String _page = _GET.get("page");
-        if (_page == null) {
-            _page = "0";
+        String _offset = _GET.get("offset");
+        if (_offset == null) {
+            _offset = "0";
         }
-        int page = Integer.parseInt(_page);
+        int offset = Integer.parseInt(_offset);
         Connection conn = DatabaseHelper.getConnection();
-        HashMap<String, String> names = new HashMap<>();
-        ArrayList<String> q_marks = new ArrayList<>();
         JSONObject resp = new JSONObject().put("success", true);
         JSONArray players = new JSONArray();
-        try (PreparedStatement stmt = conn.prepareStatement("select p.uuid, p.total, p.won, p.survived from player_war_stats p order by p.total desc, p.won desc limit 10 offset ?")) {
-            stmt.setInt(1, page * 10);
+        try (PreparedStatement stmt = conn.prepareStatement("select p.uuid, sum(p.count_total), sum(p.count_won), sum(p.count_survived), p.ign from player_war_total p group by uuid order by sum(p.count_total) desc, sum(p.count_won) desc limit 10 offset ?")) {
+            stmt.setInt(1, offset);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                players.put(new JSONObject().put("uuid", rs.getString(1)).put("won", rs.getInt(3)).put("total", rs.getInt(2)).put("survived", rs.getInt(4)));
-                names.put(rs.getString(1), "");
-                q_marks.add("?");
+                players.put(new JSONObject().put("uuid", rs.getString(1)).put("won", rs.getInt(3)).put("total", rs.getInt(2)).put("survived", rs.getInt(4)).put("player", rs.getString(5)));
             }
             // get the ign
-        }
-        if (q_marks.size() > 0) {
-            try (PreparedStatement stmt = conn.prepareStatement("select uuid, ign from player_war_log where uuid in (" + String.join(",", q_marks) + ")")) {
-                int i = 1;
-                for (String uuid : names.keySet()) {
-                    stmt.setString(i++, uuid);
-                }
-                ResultSet rs = stmt.executeQuery();
-                while (rs.next()) {
-                    names.put(rs.getString(1), rs.getString(2));
-                }
-                for (i = 0; i < players.length(); ++i) {
-                    JSONObject player = players.getJSONObject(i);
-                    player.put("player", names.get(player.getString("uuid")));
-                }
-            }
         }
         resp.put("players", players);
         return new HttpResponse().setRcode(200).setResponse(resp.toString());

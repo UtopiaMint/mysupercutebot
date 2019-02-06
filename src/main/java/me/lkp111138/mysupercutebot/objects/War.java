@@ -14,9 +14,11 @@ import java.util.concurrent.TimeUnit;
 
 public class War {
     private String server;
+    private final int start_time;
     private int id;
     private String guild;
     private Set<String> players = new HashSet<>();
+    private Set<String> unique_players = new HashSet<>();
     private boolean closed = false;
     private boolean started = false;
 
@@ -25,13 +27,53 @@ public class War {
 
     public War(String server, int start_time) {
         this.server = server;
+        this.start_time = start_time;
         server_war.put(server, this);
         id = DatabaseHelper.new_war_server(server, start_time);
         System.out.printf("war id: %d\n", id);
     }
 
+    public static String export() {
+        StringBuilder sb = new StringBuilder("----- Ongoing wars -----\n\n");
+        for (War war : server_war.values()) {
+            sb.append(war.export_long());
+        }
+        return sb.toString();
+    }
+
     public String getGuild() {
         return guild;
+    }
+
+    private String export_long() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(server).append(" / ");
+        if (guild != null) {
+            sb.append(guild);
+        } else {
+            sb.append("(Not started)");
+        }
+        // war duration
+        int now = (int) (System.currentTimeMillis() / 1000);
+        int dur = now - start_time;
+        int mins = dur / 60;
+        int secs = dur % 60;
+        sb.append("\nDuration:");
+        if (mins > 0) {
+            sb.append(" ").append(mins).append(" m");
+        }
+        sb.append(" ").append(secs).append(" s");
+        sb.append("\nPlayers: ").append(players.size()).append("/").append(unique_players.size()).append(" - ");
+        for (String p : unique_players) {
+            if (players.contains(p)) {
+                // alive
+                sb.append(p).append(", ");
+            } else {
+                sb.append("(").append(p).append(")").append(", ");
+            }
+        }
+        sb.setLength(sb.length() - 2);
+        return sb.append("\n\n").toString();
     }
 
     public void setGuild(String guild) {
@@ -61,6 +103,7 @@ public class War {
         }
         if (players.add(name)) {
             System.out.printf("adding %s\n", name);
+            unique_players.add(name);
             Connection conn = DatabaseHelper.getConnection();
             try (PreparedStatement stmt = conn.prepareStatement("insert into player_war_log (war_id, uuid, ign, guild) values (?, ?, ?, ?)")){
                 String uuid = Functions.ign2uuid(name);

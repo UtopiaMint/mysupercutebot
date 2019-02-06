@@ -54,7 +54,7 @@ public abstract class AbstractHandler implements HttpHandler {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                response = new HttpResponse().setResponse("{\"success\": false, \"reason\": \"" + e.getMessage().replace("\"", "\\") + "\"}");
+                response = new HttpResponse().setResponse("{\"success\": false, \"reason\": \"" + e.getMessage().replace("\"", "\\\"") + "\"}");
             }
             length = fuck(exchange, response);
         } catch (Exception e) {

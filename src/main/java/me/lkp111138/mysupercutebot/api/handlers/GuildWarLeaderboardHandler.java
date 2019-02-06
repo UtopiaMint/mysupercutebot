@@ -34,7 +34,7 @@ public class GuildWarLeaderboardHandler extends AbstractHandler {
         }
         int page = Integer.parseInt(_page);
         Connection conn = DatabaseHelper.getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement("select guild, total, won from war_log_aggregated order by total desc limit 10 offset ?")) {
+        try (PreparedStatement stmt = conn.prepareStatement("select guild, count_total, count_won from war_total order by count_total desc limit 10 offset ?")) {
             stmt.setInt(1, page * 10);
             ResultSet rs = stmt.executeQuery();
             JSONObject resp = new JSONObject().put("success", true);

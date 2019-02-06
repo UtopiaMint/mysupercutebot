@@ -13,7 +13,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.function.Consumer;
 
 import static me.lkp111138.mysupercutebot.helpers.Functions.guildInfo;
 import static me.lkp111138.mysupercutebot.helpers.Functions.http_get;

@@ -16,7 +16,6 @@ public class Functions {
 
 
     public static JSONObject guildInfo(String name) {
-        // TODO: detect tags and fetch from db
         JSONObject guild = guild_cache.get(name);
         if (guild == null) {
             // have to claim to cute to make up for trailing spaces smh
@@ -71,7 +70,7 @@ public class Functions {
         }
     }
 
-    static String http_get(String url) {
+    public static String http_get(String url) {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
