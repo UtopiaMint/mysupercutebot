@@ -1,29 +1,36 @@
 package me.lkp111138.mysupercutebot.objects;
 
 import me.lkp111138.mysupercutebot.Main;
+import me.lkp111138.mysupercutebot.api.discord.DiscordBot;
 import me.lkp111138.mysupercutebot.helpers.DatabaseHelper;
 import me.lkp111138.mysupercutebot.helpers.Functions;
+import net.dv8tion.jda.core.entities.Message;
 import org.json.JSONArray;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 public class War {
     private String server;
     private final int start_time;
+    private int end_time;
     private int id;
     private String guild;
     private Set<String> players = new HashSet<>();
     private Set<String> unique_players = new HashSet<>();
     private boolean closed = false;
     private boolean started = false;
+    private HashMap<Long, Message> messages = new HashMap<>();
 
     private static Map<String, War> guild_war = new HashMap<>();
     private static Map<String, War> server_war = new HashMap<>();
+    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public War(String server, int start_time) {
         this.server = server;
@@ -137,11 +144,62 @@ public class War {
                 removePlayer(name);
             }
         }
+        update_discord_shit();
+    }
+
+    private void update_discord_shit() {
+        // update discord shit
+        StringBuilder _msg = new StringBuilder("**").append(server).append("** / ");
+        if (guild == null) {
+            _msg.append("???");
+        } else {
+            _msg.append(guild);
+        }
+        _msg.append(" - ");
+        for (String name : unique_players) {
+            if (players.contains(name)) {
+                _msg.append(name);
+            } else {
+                _msg.append("~~").append(name).append("~~");
+            }
+            _msg.append(", ");
+        }
+        _msg.setLength(_msg.length() - 2);
+        _msg.append("\nTime: ").append(sdf.format(start_time * 1000L)).append(" - ");
+        if (!closed) {
+            _msg.append(sdf.format(System.currentTimeMillis()));
+            _msg.append(" *(Ongoing)*");
+        } else {
+            _msg.append(sdf.format(end_time * 1000L));
+
+        }
+        if (messages.isEmpty()) {
+            // send
+            Connection conn = DatabaseHelper.getConnection();
+            try (PreparedStatement stmt = conn.prepareStatement("select channel_id from discord_war_log where guild=?")) {
+                stmt.setString(1, guild);
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    DiscordBot.send(rs.getLong(1), _msg.toString()).whenComplete((message, throwable) -> {
+                        messages.put(message.getIdLong(), message);
+                    });
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        } else {
+            // update
+            for (long key : messages.keySet()) {
+                Message m = messages.get(key);
+                m.editMessage(_msg.toString()).submit();
+            }
+        }
     }
 
     private void removePlayer(String name) {
         // is dead
         Connection conn = DatabaseHelper.getConnection();
+        players.remove(name);
         try (PreparedStatement stmt = conn.prepareStatement("update player_war_log set survived=0 where ign=? and war_id=?")) {
             stmt.setString(1, name);
             stmt.setInt(2, id);
@@ -159,6 +217,7 @@ public class War {
     }
 
     private void _close(int end_time) {
+        this.end_time = end_time;
         // we wait 20 secs and poll db for a terr gain event for a maximum of 5 times
         // if that doesn't work you lost
         if (closed || !started) return;
@@ -166,7 +225,7 @@ public class War {
         closed = true;
         guild_war.remove(guild);
         server_war.remove(server);
-        ;
+        update_discord_shit();
         try (PreparedStatement stmt1 = DatabaseHelper.getConnection().prepareStatement("update war_log set end_time=? where id=?")) {
             stmt1.setInt(1, end_time);
             stmt1.setInt(2, id);

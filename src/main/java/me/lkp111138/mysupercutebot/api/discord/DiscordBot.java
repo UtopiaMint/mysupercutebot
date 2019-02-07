@@ -1,36 +1,48 @@
-package me.lkp111138.mysupercutebot.api;
+package me.lkp111138.mysupercutebot.api.discord;
 
 import me.lkp111138.mysupercutebot.Constants;
-import me.lkp111138.mysupercutebot.api.discord.commands.CommandHandler;
-import me.lkp111138.mysupercutebot.api.discord.commands.PlayerWarStatsCommand;
-import me.lkp111138.mysupercutebot.api.discord.commands.WarStatsCommand;
-import me.lkp111138.mysupercutebot.api.discord.commands.WhosWarringCommand;
+import me.lkp111138.mysupercutebot.api.discord.commands.*;
 import me.lkp111138.mysupercutebot.api.discord.message.PaginatedMessage;
+import me.lkp111138.mysupercutebot.helpers.DatabaseHelper;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.entities.ChannelType;
+import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.events.ReadyEvent;
+import net.dv8tion.jda.core.events.channel.text.TextChannelDeleteEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.requests.RequestFuture;
 import net.dv8tion.jda.core.requests.RestAction;
 
 import javax.security.auth.login.LoginException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.HashMap;
 
 public class DiscordBot extends ListenerAdapter {
     private static final HashMap<String, CommandHandler> commands = new HashMap<>();
     private static final String prefix = "~";
+    private static JDA jda;
 
     public static void init() throws LoginException {
-        JDA jda = new JDABuilder(Constants.DISCORD_TOKEN).build();
+        jda = new JDABuilder(Constants.DISCORD_TOKEN).build();
         jda.addEventListener(new DiscordBot());
         commands.put("ws", new WarStatsCommand());
         commands.put("pws", new PlayerWarStatsCommand());
         commands.put("ww", new WhosWarringCommand());
+        commands.put("wt", new WarTrackCommand());
         commands.put("warstats", new WarStatsCommand());
         commands.put("playerwarstats", new PlayerWarStatsCommand());
         commands.put("whoswarring", new WhosWarringCommand());
+        commands.put("wartrack", new WarTrackCommand());
+    }
+
+    public static RequestFuture<Message> send(long channel, String msg) {
+        RequestFuture<Message> complete = jda.getTextChannelById(channel).sendMessage(msg).submit();
+        return complete;
     }
 
     @Override
@@ -113,6 +125,18 @@ public class DiscordBot extends ListenerAdapter {
                 break;
             case 10060:
                 pmsg.cancel();
+        }
+    }
+
+    @Override
+    public void onTextChannelDelete(TextChannelDeleteEvent event) {
+        // delete any associated terr/war tracks
+        Connection conn = DatabaseHelper.getConnection();
+        try (PreparedStatement stmt = conn.prepareStatement("delete from discord_war_log where channel_id=?")) {
+            stmt.setLong(1, event.getChannel().getIdLong());
+            stmt.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }

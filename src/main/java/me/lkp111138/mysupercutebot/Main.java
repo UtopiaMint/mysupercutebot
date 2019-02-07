@@ -1,7 +1,7 @@
 package me.lkp111138.mysupercutebot;
 
 import me.lkp111138.mysupercutebot.api.ApiServer;
-import me.lkp111138.mysupercutebot.api.DiscordBot;
+import me.lkp111138.mysupercutebot.api.discord.DiscordBot;
 import me.lkp111138.mysupercutebot.helpers.DatabaseHelper;
 import me.lkp111138.mysupercutebot.helpers.Looper;
 

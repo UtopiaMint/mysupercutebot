@@ -8,6 +8,8 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
+import static me.lkp111138.mysupercutebot.helpers.Looper.tag2name;
+
 public class Functions {
     private static Map<String, JSONObject> guild_cache = new HashMap<>();
     private static Map<String, JSONObject> player_cache = new HashMap<>();
@@ -16,6 +18,9 @@ public class Functions {
 
 
     public static JSONObject guildInfo(String name) {
+        if (name.length() == 3) {
+            return guildInfo(tag2name(name));
+        }
         JSONObject guild = guild_cache.get(name);
         if (guild == null) {
             // have to claim to cute to make up for trailing spaces smh
