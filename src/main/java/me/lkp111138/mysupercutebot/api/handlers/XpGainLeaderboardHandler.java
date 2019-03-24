@@ -79,8 +79,22 @@ public class XpGainLeaderboardHandler extends AbstractHandler {
         private int old_lvl = 0;
         private long now_xp = 0;
         private long old_xp = 666666666666L;
+        private long[] lvl_xp = new long[]{0,2200L,6864L,-1,30976L,56428L,97994L,163300L,264844L,419560L,602448L,852324L,1274800L,1741568L,2393896L,3178888L,4395776L,5822952L,7680496L,10094700L,12576960L,15271408L,18176328L,21296324L,-1,28540928L,34120944L,40238272L,48132760L,56424720L,65569680L,76150072L,94969036L,106260696L,-1,140582440L,-1,-1,-1,250716864L,302589056L,372900328L,439287340L,528448652L,635079244L,762509284L,914665840L,1074729260L,1262236800L,1481808020L,1738858000L,2039683800L,2391634960L,2803273880L,3284594280L,3847231300L,4504758720L,5272982220L,6170314920L,7218203960L,-1,9030089860L,-1,11282040000L,12601600000L,14085500000L,15725160000L,17570861220L,-1,19616419680L,24424400000L,27261351700L};
+
         private long gained() {
-            return Math.max(0, now_xp - old_xp);
+            long gained = now_xp - old_xp;
+            for (int i = old_lvl; i < now_lvl; ++i) {
+                try {
+                    long _lvl_xp = lvl_xp[i];
+                    if (_lvl_xp < 0) {
+                        _lvl_xp = (long) Math.sqrt(lvl_xp[i - 1] * lvl_xp[i + 1]);
+                    }
+                    gained += _lvl_xp;
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    return 0;
+                }
+            }
+            return gained;
         }
     }
 }

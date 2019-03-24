@@ -26,23 +26,42 @@ public class DiscordBot extends ListenerAdapter {
     private static final HashMap<String, CommandHandler> commands = new HashMap<>();
     private static final String prefix = "~";
     private static JDA jda;
+    private static boolean ready = false;
 
     public static void init() throws LoginException {
         jda = new JDABuilder(Constants.DISCORD_TOKEN).build();
+        _init();
+    }
+
+    public static void init(String token) throws LoginException {
+        jda = new JDABuilder(token).build();
+        _init();
+    }
+
+    private static void _init() {
         jda.addEventListener(new DiscordBot());
         commands.put("ws", new WarStatsCommand());
         commands.put("pws", new PlayerWarStatsCommand());
         commands.put("ww", new WhosWarringCommand());
         commands.put("wt", new WarTrackCommand());
+        commands.put("tt", new TerrTrackCommand());
         commands.put("warstats", new WarStatsCommand());
         commands.put("playerwarstats", new PlayerWarStatsCommand());
         commands.put("whoswarring", new WhosWarringCommand());
         commands.put("wartrack", new WarTrackCommand());
+        commands.put("terrtrack", new TerrTrackCommand());
     }
 
     public static RequestFuture<Message> send(long channel, String msg) {
-        RequestFuture<Message> complete = jda.getTextChannelById(channel).sendMessage(msg).submit();
-        return complete;
+        if (jda != null) {
+            return jda.getTextChannelById(channel).sendMessage(msg).submit();
+        } else {
+            return null;
+        }
+    }
+
+    public static boolean isReady() {
+        return ready;
     }
 
     @Override
@@ -84,6 +103,7 @@ public class DiscordBot extends ListenerAdapter {
     @Override
     public void onReady(ReadyEvent event) {
         System.out.println("Bot ready");
+        ready = true;
     }
 
     @Override

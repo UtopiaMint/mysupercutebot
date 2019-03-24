@@ -19,7 +19,11 @@ public class Main {
         DatabaseHelper.init();
         new Thread(new ApiServer()).start();
         started = System.currentTimeMillis();
-        DiscordBot.init();
+        if (args.length > 0) {
+            DiscordBot.init(args[0]);
+        } else {
+            DiscordBot.init();
+        }
         new Looper().run();
     }
 

@@ -25,6 +25,7 @@ public class ApiServer implements Runnable {
             server.createContext("/v1/xpgain", new XpGainLeaderboardHandler());
             server.createContext("/v1/guildinfo/", new GuildInfoHandler());
             server.createContext("/v1/forums/", new ForumThreadListHandler());
+            server.createContext("/v1/territories", new TerritoriesHandler());
             server.createContext("/v1/status", new StatusHandler());
             server.setExecutor(pool);
             server.start();

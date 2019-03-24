@@ -13,15 +13,18 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static me.lkp111138.mysupercutebot.helpers.Functions.guildInfo;
 import static me.lkp111138.mysupercutebot.helpers.Functions.http_get;
 
 public class Looper extends Thread {
     private JSONObject warlog_cache;
-    private JSONObject terrlog_cache;
+    private static JSONObject terrlog_cache;
     private int last_xp_log = -1;
     private List<String> war_servers = new ArrayList<>();
+    private ExecutorService[] executor = new ExecutorService[]{Executors.newSingleThreadExecutor(), Executors.newSingleThreadExecutor(), Executors.newSingleThreadExecutor()};
 
     @SuppressWarnings("InfiniteLoopStatement")
     @Override
@@ -32,15 +35,16 @@ public class Looper extends Thread {
             SimpleDateFormat sdf = new SimpleDateFormat("[yyyy/MM/dd HH:mm:ss.SSS");
             System.out.printf("%s / %d]\n", sdf.format(date), date.getTime());
             // player war log
-            warlog();
+            executor[0].submit(this::warlog);
             // terr log
-            terrlog();
+            executor[1].submit(this::terrlog);
             // xp log
-            xplog();
+            executor[2].submit(this::xplog);
             try {
                 sleep(Math.max(0, last_run + 20000 - System.currentTimeMillis()));
             } catch (InterruptedException e) {
                 e.printStackTrace();
+            } catch (IllegalArgumentException ignored) {
             }
         }
     }
@@ -116,14 +120,18 @@ public class Looper extends Thread {
     }
 
     private void terrlog() {
-        String _terr_list = null;
+        String _terr_list;
         try {
             _terr_list = http_get("https://api.wynncraft.com/public_api.php?action=territoryList");
             JSONObject terr_list = new JSONObject(_terr_list);
-            terrlog_log(terrlog_cache, terr_list);
-            terrlog_cache = terr_list;
+            if (terr_list.has("territories")) {
+                JSONObject cache = terrlog_cache;
+                terrlog_cache = terr_list;
+                terrlog_log(cache, terr_list);
+            } else {
+                System.out.println(terr_list);
+            }
         } catch (Exception e) {
-            System.out.println(_terr_list);
             e.printStackTrace();
         }
     }
@@ -134,11 +142,12 @@ public class Looper extends Thread {
         }
         // normal -> war
         List<String> removed = new ArrayList<>();
+        int ts = now.getJSONObject("request").getInt("timestamp");
         for (String server : war_servers) {
             if (!now.has(server)) {
                 // war server closed
                 try {
-                    War.byServer(server).close(now.getJSONObject("request").getInt("timestamp")); // cuz the war object may close itself
+                    War.byServer(server).close(ts); // cuz the war object may close itself
                 } catch (Exception ignored) {
                 }
                 removed.add(server);
@@ -148,7 +157,7 @@ public class Looper extends Thread {
         for (String i : now.keySet()) {
             if (!i.startsWith("WAR")) continue;
             if (!war_servers.contains(i)) {
-                new War(i, now.getJSONObject("request").getInt("timestamp"));
+                new War(i, ts);
                 war_servers.add(i);
             }
             JSONArray players = now.getJSONArray(i);
@@ -159,7 +168,7 @@ public class Looper extends Thread {
                 String name = players.getString(j);
                 if (war.getGuild() == null) {
                     try {
-                        war.setGuild(Functions.playerInfo(name).getJSONObject("guild").getString("name"));
+                        war.setGuild(Functions.playerInfo(name).getJSONObject("guild").getString("name"), ts);
                     } catch (Exception ignored){
                     }
                 }
@@ -224,7 +233,7 @@ public class Looper extends Thread {
             return -1;
         }
         TimeZone tz = Calendar.getInstance().getTimeZone();
-        return date.getTime() + tz.getRawOffset() + 18000000; // wynn is at gmt-5 now smh
+        return date.getTime() + tz.getRawOffset() + 14400000; // wynn is at gmt-5 now smh // edit: -4 now
     }
 
     public static String tag2name(String tag) {
@@ -241,5 +250,16 @@ public class Looper extends Thread {
             e.printStackTrace();
             return "";
         }
+    }
+
+    static int terr_count(String guild) {
+        int count = 0;
+        for (String i : terrlog_cache.getJSONObject("territories").keySet()) {
+            JSONObject terr0 = terrlog_cache.getJSONObject("territories").getJSONObject(i);
+            if (terr0.getString("guild").equals(guild)) {
+                ++count;
+            }
+        }
+        return count;
     }
 }

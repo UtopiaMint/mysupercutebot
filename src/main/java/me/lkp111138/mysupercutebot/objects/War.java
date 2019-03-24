@@ -18,7 +18,7 @@ import java.util.function.BiConsumer;
 
 public class War {
     private String server;
-    private final int start_time;
+    private int start_time;
     private int end_time;
     private int id;
     private String guild;
@@ -83,14 +83,16 @@ public class War {
         return sb.append("\n\n").toString();
     }
 
-    public void setGuild(String guild) {
+    public void setGuild(String guild, int start_time) {
         if (this.guild == null) {
             this.guild = guild;
+            this.start_time = start_time;
             guild_war.put(guild, this);
             Connection conn = DatabaseHelper.getConnection();
-            try (PreparedStatement stmt = conn.prepareStatement("update war_log set guild=? where id=?")) {
+            try (PreparedStatement stmt = conn.prepareStatement("update war_log set guild=?, start_time=? where id=?")) {
                 stmt.setString(1, guild);
-                stmt.setInt(2, id);
+                stmt.setInt(2, start_time);
+                stmt.setInt(3, id);
                 stmt.execute();
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -173,25 +175,25 @@ public class War {
             _msg.append(sdf.format(end_time * 1000L));
 
         }
-        if (messages.isEmpty()) {
-            // send
-            Connection conn = DatabaseHelper.getConnection();
-            try (PreparedStatement stmt = conn.prepareStatement("select channel_id from discord_war_log where guild=?")) {
-                stmt.setString(1, guild);
-                ResultSet rs = stmt.executeQuery();
-                while (rs.next()) {
-                    DiscordBot.send(rs.getLong(1), _msg.toString()).whenComplete((message, throwable) -> {
-                        messages.put(message.getIdLong(), message);
-                    });
+        if (DiscordBot.isReady()) {
+            if (messages.isEmpty()) {
+                // send
+                Connection conn = DatabaseHelper.getConnection();
+                try (PreparedStatement stmt = conn.prepareStatement("select channel_id from discord_war_log where guild=? or guild is null")) {
+                    stmt.setString(1, guild);
+                    ResultSet rs = stmt.executeQuery();
+                    while (rs.next()) {
+                        Objects.requireNonNull(DiscordBot.send(rs.getLong(1), _msg.toString())).whenComplete((message, throwable) -> messages.put(message.getIdLong(), message));
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
                 }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        } else {
-            // update
-            for (long key : messages.keySet()) {
-                Message m = messages.get(key);
-                m.editMessage(_msg.toString()).submit();
+            } else {
+                // update
+                for (long key : messages.keySet()) {
+                    Message m = messages.get(key);
+                    m.editMessage(_msg.toString()).submit();
+                }
             }
         }
     }
