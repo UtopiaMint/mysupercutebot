@@ -168,7 +168,7 @@ public class Looper extends Thread {
                 String name = players.getString(j);
                 if (war.getGuild() == null) {
                     try {
-                        war.setGuild(Functions.playerInfo(name).getJSONObject("guild").getString("name"), ts);
+                        war.setGuild(Functions.playerInfo(name).getJSONArray("data").getJSONObject(0).getJSONObject("guild").getString("name"), ts);
                     } catch (Exception ignored){
                     }
                 }

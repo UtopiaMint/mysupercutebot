@@ -105,7 +105,7 @@ public class War {
         started = true;
         if (guild == null) {
             try {
-                guild = Functions.playerInfo(name).getJSONObject("guild").getString("name");
+                guild = Functions.playerInfo(name).getJSONArray("data").getJSONObject(0).getJSONObject("guild").getString("name");
             } catch (NullPointerException ignored) {
                 // blame wynn api
             }

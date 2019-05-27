@@ -49,16 +49,16 @@ public class Functions {
     public static JSONObject playerInfo(String name) {
         JSONObject player = player_cache.get(name);
         if (player == null) {
-            JSONObject obj = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=playerStats&command=" + name));
+            JSONObject obj = new JSONObject(http_get("https://api.wynncraft.com/v2/player/" + name + "/stats"));
             player_cache.put(name, obj);
             return obj;
         } else {
-            int ts = 0;
+            long ts = 0;
             try {
-                ts = player.getJSONObject("request").getInt("timestamp");
+                ts = player.getLong("timestamp");
             } catch (JSONException ignored) {
             }
-            if (ts < System.currentTimeMillis() / 1000 - 120) { // cache player info for 2mins
+            if (ts < System.currentTimeMillis() - 120000) { // cache player info for 2mins
                 player_cache.remove(name);
                 return playerInfo(name);
             } else {

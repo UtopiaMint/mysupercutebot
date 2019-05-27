@@ -20,20 +20,26 @@ public class TerrTrackCommand implements CommandHandler {
             evt.getChannel().sendMessage("Provide a guild to track.").submit();
             return null;
         }
-        String track;
-        try {
-            JSONObject guild = guildInfo(rest);
-            track = guild.getString("name");
-        } catch (JSONException e) {
-            evt.getChannel().sendMessage("The guild `").append(rest).append("` either doesn't exist or have spelling/capitalization errors.").submit();
-            return null;
+        rest = rest.trim();
+        String track = null;
+        if (!rest.equals("*")) {
+            try {
+                JSONObject guild = guildInfo(rest);
+                track = guild.getString("name");
+            } catch (JSONException e) {
+                evt.getChannel().sendMessage("The guild `").append(rest).append("` either doesn't exist or have spelling/capitalization errors.").submit();
+                return null;
+            }
         }
         try (PreparedStatement stmt = conn.prepareStatement("replace into discord_terr_log (channel_id, guild) VALUES (?, ?)")) {
             stmt.setString(2, track);
             stmt.setLong(1, evt.getChannel().getIdLong());
             stmt.execute();
-            evt.getChannel().sendMessage("Successfully set up territory track for guild `").append(track).append("`").submit();
-        } catch (SQLException e) {
+            if (track == null) {
+                evt.getChannel().sendMessage("Successfully set up war track for all guilds").submit();
+            } else {
+                evt.getChannel().sendMessage("Successfully set up war track for guild `").append(track).append("`").submit();
+            }        } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
