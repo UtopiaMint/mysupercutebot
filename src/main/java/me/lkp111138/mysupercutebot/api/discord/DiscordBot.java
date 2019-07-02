@@ -111,8 +111,6 @@ public class DiscordBot extends ListenerAdapter {
         if (event.getUser().isBot()) {
             return;
         }
-        RestAction<Void> action = event.getReaction().removeReaction(event.getUser());
-        action.submit();
         int emoji = event.getReaction().getReactionEmote().getName().codePointAt(0);
         System.out.println("reaction " + emoji);
 //        System.out.println("reaction " + event);
@@ -127,6 +125,8 @@ public class DiscordBot extends ListenerAdapter {
         if (pmsg == null) {
             return;
         }
+        RestAction<Void> action = event.getReaction().removeReaction(event.getUser());
+        action.submit();
         switch (emoji) {
             case 11013:
                 pmsg.privPage();
