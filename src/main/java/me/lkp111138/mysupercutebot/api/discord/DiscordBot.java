@@ -88,12 +88,12 @@ public class DiscordBot extends ListenerAdapter {
                     }
                     if (pmsg != null) {
                         pmsg.setHandler(handler);
-                        pmsg.getMsg().addReaction(new StringBuffer().appendCodePoint(9194).toString()).complete(); // 1st page
-                        pmsg.getMsg().addReaction(new StringBuffer().appendCodePoint(11013).toString()).complete(); // priv page
-                        pmsg.getMsg().addReaction(new StringBuffer().appendCodePoint(10145).toString()).complete(); // next page
-                        pmsg.getMsg().addReaction(new StringBuffer().appendCodePoint(9193).toString()).complete(); // last page
-                        pmsg.getMsg().addReaction(new StringBuffer().appendCodePoint(128260).toString()).complete(); // reload
-                        pmsg.getMsg().addReaction(new StringBuffer().appendCodePoint(10060).toString()).complete(); // cancel
+                        pmsg.getMsg().addReaction(new StringBuffer().appendCodePoint(9194).toString()).submit(); // 1st page
+                        pmsg.getMsg().addReaction(new StringBuffer().appendCodePoint(11013).toString()).submit(); // priv page
+                        pmsg.getMsg().addReaction(new StringBuffer().appendCodePoint(10145).toString()).submit(); // next page
+                        pmsg.getMsg().addReaction(new StringBuffer().appendCodePoint(9193).toString()).submit(); // last page
+                        pmsg.getMsg().addReaction(new StringBuffer().appendCodePoint(128260).toString()).submit(); // reload
+                        pmsg.getMsg().addReaction(new StringBuffer().appendCodePoint(10060).toString()).submit(); // cancel
                     }
                 }
             }
