@@ -21,7 +21,7 @@ public class PlayerWarStatsCommand implements CommandHandler {
     public PaginatedMessage process(MessageReceivedEvent evt, String cmd, String rest, PaginatedMessage pmsg) {
         // rest = player name
         int page = pmsg == null ? 0 : pmsg.getCurrentPage();
-        String _data = http_get("https://api.tddbot.ml/v1/warlogs/player/" + rest + "?offset=" + page * 5);
+        String _data = http_get("http://localhost:6080/v1/warlogs/player/" + rest + "?offset=" + page * 5);
         JSONObject data = new JSONObject(_data);
         MessageAction action;
         StringBuilder sb;
