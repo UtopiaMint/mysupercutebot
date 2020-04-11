@@ -36,7 +36,16 @@ public class PlayerWarLogHandler extends AbstractHandler {
         String _offset = _GET.get("offset");
         Connection conn = DatabaseHelper.getConnection();
         String uuid = Functions.ign2uuid(player);
-        String player_guild = Functions.playerInfo(player).getJSONArray("data").getJSONObject(0).getJSONObject("guild").getString("name");
+        JSONObject guildObj = Functions.playerInfo(player).getJSONArray("data").getJSONObject(0).getJSONObject("guild");
+        JSONObject resp = new JSONObject();
+        if (guildObj == null || guildObj.isNull("name")) {
+            // api says the player isn't in a guild
+            resp.put("success", "true");
+            resp.put("wars", new JSONArray());
+            resp.put("msg", "not_in_guild");
+            return new HttpResponse().setRcode(200).setResponse(resp.toString());
+        }
+        String player_guild = guildObj.getString("name");
         try (PreparedStatement stmt = conn.prepareStatement("SELECT w.id, p.ign, p.guild, p.survived, p.won, w.server, w.start_time, w.end_time, t.defender, t.terr_name, t.acquired FROM player_war_log p left join war_log w on p.war_id=w.id left join terr_log t on w.terr_entry=t.id WHERE UUID=? and w.guild=? ORDER BY w.id DESC LIMIT 5 OFFSET ?;"))
         {
             stmt.setString(1, uuid);
@@ -47,7 +56,6 @@ public class PlayerWarLogHandler extends AbstractHandler {
                 stmt.setInt(3, 0);
             }
             ResultSet rs = stmt.executeQuery();
-            JSONObject resp = new JSONObject();
             resp.put("success", "true");
             JSONArray array = new JSONArray();
             int now = (int) (System.currentTimeMillis() / 1000);
