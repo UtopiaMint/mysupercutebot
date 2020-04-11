@@ -49,7 +49,10 @@ public class Functions {
     public static JSONObject playerInfo(String name) {
         JSONObject player = player_cache.get(name);
         if (player == null) {
-            JSONObject obj = new JSONObject(http_get("https://api.wynncraft.com/v2/player/" + name + "/stats"));
+            String uuid = ign2uuid(name); // fuck you wynn for not issuing that damn update statement on legitmate joins
+            uuid = uuid.substring(0, 8) + "-" + uuid.substring(8, 12) + "-" + uuid.substring(12, 16) + "-" + uuid.substring(16, 20) + "-" + uuid.substring(20);
+            System.out.println(uuid);
+            JSONObject obj = new JSONObject(http_get("https://api.wynncraft.com/v2/player/" + uuid + "/stats"));
             player_cache.put(name, obj);
             return obj;
         } else {
