@@ -93,7 +93,7 @@ public class PlayerWarLogHandler extends AbstractHandler {
                 }
             }
             resp.put("wars", array);
-            try (PreparedStatement stmt2 = conn.prepareStatement("select count_total, count_won, count_survived from player_war_log where uuid=? and guild=? order by id desc limit 1")) {
+            try (PreparedStatement stmt2 = conn.prepareStatement("select total, won, survived from player_war_log_aggregated where uuid=? and guild=? limit 1")) {
                 stmt2.setString(1, uuid);
                 stmt2.setString(2, player_guild);
                 rs = stmt2.executeQuery();

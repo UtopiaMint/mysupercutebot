@@ -85,7 +85,7 @@ public class GuildWarLogHandler extends AbstractHandler {
             }
         }
         resp.put("wars", array);
-        try (PreparedStatement stmt = conn.prepareStatement("select count_total, count_won from war_log where guild=? order by id desc limit 1")){
+        try (PreparedStatement stmt = conn.prepareStatement("select total, won from war_log_aggregated where guild=?")){
             stmt.setString(1, guild);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
