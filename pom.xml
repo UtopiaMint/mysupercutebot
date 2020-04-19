@@ -73,12 +73,12 @@
     <repositories>
         <repository>
             <id>xuggle repo</id>
-            <url>http://xuggle.googlecode.com/svn/trunk/repo/share/java/</url>
+            <url>https://xuggle.googlecode.com/svn/trunk/repo/share/java/</url>
         </repository>
         <repository>
             <id>jcenter</id>
             <name>jcenter-bintray</name>
-            <url>http://jcenter.bintray.com</url>
+            <url>https://jcenter.bintray.com</url>
         </repository>
         <repository> <!-- Required for OkHTTP 3.13.0-SNAPSHOT -->
             <id>sonatype</id>
