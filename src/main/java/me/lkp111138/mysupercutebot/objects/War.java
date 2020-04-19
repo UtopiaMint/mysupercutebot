@@ -37,7 +37,7 @@ public class War {
         this.start_time = start_time;
         server_war.put(server, this);
         id = DatabaseHelper.new_war_server(server, start_time);
-        System.out.printf("war id: %d\n", id);
+        System.out.printf("war id: %d ", id);
     }
 
     public static String export() {
@@ -101,7 +101,6 @@ public class War {
     }
 
     private void addPlayer(String name) {
-        System.out.printf("trying to add %s\n", name);
         started = true;
         if (guild == null) {
             try {
@@ -111,7 +110,6 @@ public class War {
             }
         }
         if (players.add(name)) {
-            System.out.printf("adding %s\n", name);
             unique_players.add(name);
             Connection conn = DatabaseHelper.getConnection();
             try (PreparedStatement stmt = conn.prepareStatement("insert into player_war_log (war_id, uuid, ign, guild) values (?, ?, ?, ?)")){

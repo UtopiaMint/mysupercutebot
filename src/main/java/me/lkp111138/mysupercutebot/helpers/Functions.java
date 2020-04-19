@@ -89,13 +89,11 @@ public class Functions {
     }
 
     public static String http_get(String url) {
-        System.out.printf("%d http_get start %s\n", System.currentTimeMillis(), url);
         Request request = new Request.Builder()
                 .url(url)
                 .build();
         try {
             Response response = client.newCall(request).execute();
-            System.out.printf("%d http_get success %s\n", System.currentTimeMillis(), url);
             if (response.body() != null) {
                 return response.body().string();
             } else {
