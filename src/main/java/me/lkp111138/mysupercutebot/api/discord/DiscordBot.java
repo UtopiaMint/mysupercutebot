@@ -50,6 +50,7 @@ public class DiscordBot extends ListenerAdapter {
         commands.put("whoswarring", new WhosWarringCommand());
         commands.put("wartrack", new WarTrackCommand());
         commands.put("terrtrack", new TerrTrackCommand());
+        commands.put("xp", new XpLogCommand());
     }
 
     public static RequestFuture<Message> send(long channel, String msg) {
