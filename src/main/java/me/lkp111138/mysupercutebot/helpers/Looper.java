@@ -50,47 +50,48 @@ public class Looper extends Thread {
     }
 
     private void newguilds() {
-        Connection conn = DatabaseHelper.getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement("select tag, guild from guild_tag")) {
-            ResultSet rs = stmt.executeQuery();
-            HashMap<String, String> guilds = new HashMap<>();
-            while (rs.next()) {
-                guilds.put(rs.getString(2), rs.getString(1));
-            }
-            JSONArray guild_arr = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=guildList")).getJSONArray("guilds");
-            Iterator<Object> it = guild_arr.iterator();
-            while (it.hasNext()) {
-                String g = (String) it.next();
-                if (guilds.containsKey(g)) {
-                    guilds.remove(g);
-                    it.remove();
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            try (PreparedStatement stmt = conn.prepareStatement("select tag, guild from guild_tag")) {
+                ResultSet rs = stmt.executeQuery();
+                HashMap<String, String> guilds = new HashMap<>();
+                while (rs.next()) {
+                    guilds.put(rs.getString(2), rs.getString(1));
                 }
-            }
-            // remaining in guilds are deleted guilds
-            for (String g : guilds.keySet()) {
-                try (PreparedStatement stmt1 = conn.prepareStatement("delete from guild_tag where guild=?")) {
-                    stmt1.setString(1, g);
-                    stmt1.execute();
-                }
-            }
-            // remaining in guild_arr are new guilds
-            int size = Math.min(guild_arr.length(), 20);
-            for (int i = 0; i < size; i++) {
-                String g = guild_arr.getString(i);
-                System.out.println("\"" + g + "\"");
-                JSONObject guild = guildInfo(g);
-                try (PreparedStatement stmt1 = conn.prepareStatement("insert into guild_tag (guild, tag) values (?, ?)")) {
-                    stmt1.setString(1, g);
-                    try {
-                        stmt1.setString(2, guild.getString("prefix"));
-                        stmt1.execute();
-                    } catch (JSONException e) {
-                        System.out.println("\"" + g + "\"");
-                        System.out.println(guild);
+                JSONArray guild_arr = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=guildList")).getJSONArray("guilds");
+                Iterator<Object> it = guild_arr.iterator();
+                while (it.hasNext()) {
+                    String g = (String) it.next();
+                    if (guilds.containsKey(g)) {
+                        guilds.remove(g);
+                        it.remove();
                     }
                 }
+                // remaining in guilds are deleted guilds
+                for (String g : guilds.keySet()) {
+                    try (PreparedStatement stmt1 = conn.prepareStatement("delete from guild_tag where guild=?")) {
+                        stmt1.setString(1, g);
+                        stmt1.execute();
+                    }
+                }
+                // remaining in guild_arr are new guilds
+                int size = Math.min(guild_arr.length(), 20);
+                for (int i = 0; i < size; i++) {
+                    String g = guild_arr.getString(i);
+                    System.out.println("\"" + g + "\"");
+                    JSONObject guild = guildInfo(g);
+                    try (PreparedStatement stmt1 = conn.prepareStatement("insert into guild_tag (guild, tag) values (?, ?)")) {
+                        stmt1.setString(1, g);
+                        try {
+                            stmt1.setString(2, guild.getString("prefix"));
+                            stmt1.execute();
+                        } catch (JSONException e) {
+                            System.out.println("\"" + g + "\"");
+                            System.out.println(guild);
+                        }
+                    }
+                }
+                System.out.printf("new guild count: %d, deleted guild count: %d\n", guild_arr.length(), guilds.size());
             }
-            System.out.printf("new guild count: %d, deleted guild count: %d\n", guild_arr.length(), guilds.size());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -199,22 +200,23 @@ public class Looper extends Thread {
             JSONObject data = new JSONObject(_data);
             int ts = data.getJSONObject("request").getInt("timestamp");
             last_xp_log = ts;
-            Connection conn = DatabaseHelper.getConnection();
-            try (PreparedStatement stmt = conn.prepareStatement("insert into xp_log (timestamp, payload) values (?, ?)")) {
-                JSONArray payload = data.getJSONArray("data");
-                for (int i = 0; i < payload.length(); ++i) {
-                    JSONObject guild = payload.getJSONObject(i);
-                    guild.remove("created");
-                    guild.remove("banner");
-                    guild.remove("membersCount");
+            try (Connection conn = DatabaseHelper.getConnection()) {
+                try (PreparedStatement stmt = conn.prepareStatement("insert into xp_log (timestamp, payload) values (?, ?)")) {
+                    JSONArray payload = data.getJSONArray("data");
+                    for (int i = 0; i < payload.length(); ++i) {
+                        JSONObject guild = payload.getJSONObject(i);
+                        guild.remove("created");
+                        guild.remove("banner");
+                        guild.remove("membersCount");
+                    }
+                    stmt.setInt(1, ts);
+                    stmt.setString(2, payload.toString());
+                    stmt.execute();
+                    // look for new guilds
+                    long start = System.currentTimeMillis();
+                    newguilds();
+                    System.out.println(System.currentTimeMillis() - start);
                 }
-                stmt.setInt(1, ts);
-                stmt.setString(2, payload.toString());
-                stmt.execute();
-                // look for new guilds
-                long start = System.currentTimeMillis();
-                newguilds();
-                System.out.println(System.currentTimeMillis() - start);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -237,14 +239,15 @@ public class Looper extends Thread {
     }
 
     public static String tag2name(String tag) {
-        Connection conn = DatabaseHelper.getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement("select guild from guild_tag where tag=?")) {
-            stmt.setString(1, tag);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return rs.getString(1);
-            } else {
-                return "";
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            try (PreparedStatement stmt = conn.prepareStatement("select guild from guild_tag where tag=?")) {
+                stmt.setString(1, tag);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    return rs.getString(1);
+                } else {
+                    return "";
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();

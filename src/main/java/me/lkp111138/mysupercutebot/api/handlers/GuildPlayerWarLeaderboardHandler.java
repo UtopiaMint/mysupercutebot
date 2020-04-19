@@ -36,28 +36,29 @@ public class GuildPlayerWarLeaderboardHandler extends AbstractHandler {
             _page = "0";
         }
         String guild = exchange.getRequestURI().getPath().substring(30);
-        Connection conn = DatabaseHelper.getConnection();
-        JSONArray players = new JSONArray();
-        if (guild.length() == 3) {
-            // is a tag
-            guild = tag2name(guild);
-        }
-        int page = Integer.parseInt(_page);
-        JSONObject resp = new JSONObject().put("success", true);
-        HashMap<String, String> names = new HashMap<>();
-        ArrayList<String> q_marks = new ArrayList<>();
-        try (PreparedStatement stmt = conn.prepareStatement("select p.uuid, p.count_total, p.count_won, p.count_survived, p.ign from player_war_total p where p.guild=? order by p.count_total desc, p.count_won desc limit 10 offset ?")) {
-            stmt.setInt(2, page * 10);
-            stmt.setString(1, guild);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                players.put(new JSONObject().put("uuid", rs.getString(1)).put("won", rs.getInt(3)).put("total", rs.getInt(2)).put("survived", rs.getInt(4)).put("player", rs.getString(5)));
-                names.put(rs.getString(1), "");
-                q_marks.add("?");
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            JSONArray players = new JSONArray();
+            if (guild.length() == 3) {
+                // is a tag
+                guild = tag2name(guild);
             }
-            // get the ign
+            int page = Integer.parseInt(_page);
+            JSONObject resp = new JSONObject().put("success", true);
+            HashMap<String, String> names = new HashMap<>();
+            ArrayList<String> q_marks = new ArrayList<>();
+            try (PreparedStatement stmt = conn.prepareStatement("select p.uuid, p.count_total, p.count_won, p.count_survived, p.ign from player_war_total p where p.guild=? order by p.count_total desc, p.count_won desc limit 10 offset ?")) {
+                stmt.setInt(2, page * 10);
+                stmt.setString(1, guild);
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    players.put(new JSONObject().put("uuid", rs.getString(1)).put("won", rs.getInt(3)).put("total", rs.getInt(2)).put("survived", rs.getInt(4)).put("player", rs.getString(5)));
+                    names.put(rs.getString(1), "");
+                    q_marks.add("?");
+                }
+                // get the ign
+            }
+            resp.put("players", players);
+            return new HttpResponse().setRcode(200).setResponse(resp.toString());
         }
-        resp.put("players", players);
-        return new HttpResponse().setRcode(200).setResponse(resp.toString());
     }
 }

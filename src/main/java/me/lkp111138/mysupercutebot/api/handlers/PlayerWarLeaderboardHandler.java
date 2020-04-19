@@ -34,18 +34,19 @@ public class PlayerWarLeaderboardHandler extends AbstractHandler {
             _offset = "0";
         }
         int offset = Integer.parseInt(_offset);
-        Connection conn = DatabaseHelper.getConnection();
-        JSONObject resp = new JSONObject().put("success", true);
-        JSONArray players = new JSONArray();
-        try (PreparedStatement stmt = conn.prepareStatement("select p.uuid, sum(p.count_total), sum(p.count_won), sum(p.count_survived), p.ign from player_war_total p group by uuid order by sum(p.count_total) desc, sum(p.count_won) desc limit 10 offset ?")) {
-            stmt.setInt(1, offset);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                players.put(new JSONObject().put("uuid", rs.getString(1)).put("won", rs.getInt(3)).put("total", rs.getInt(2)).put("survived", rs.getInt(4)).put("player", rs.getString(5)));
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            JSONObject resp = new JSONObject().put("success", true);
+            JSONArray players = new JSONArray();
+            try (PreparedStatement stmt = conn.prepareStatement("select p.uuid, sum(p.count_total), sum(p.count_won), sum(p.count_survived), p.ign from player_war_total p group by uuid order by sum(p.count_total) desc, sum(p.count_won) desc limit 10 offset ?")) {
+                stmt.setInt(1, offset);
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    players.put(new JSONObject().put("uuid", rs.getString(1)).put("won", rs.getInt(3)).put("total", rs.getInt(2)).put("survived", rs.getInt(4)).put("player", rs.getString(5)));
+                }
+                // get the ign
             }
-            // get the ign
+            resp.put("players", players);
+            return new HttpResponse().setRcode(200).setResponse(resp.toString());
         }
-        resp.put("players", players);
-        return new HttpResponse().setRcode(200).setResponse(resp.toString());
     }
 }

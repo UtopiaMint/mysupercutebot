@@ -14,60 +14,61 @@ import java.util.HashMap;
 public class XpGainLeaderboardHandler extends AbstractHandler {
     @Override
     public HttpResponse realhandle(HttpExchange exchange) throws Exception {
-        Connection conn = DatabaseHelper.getConnection();
-        try (PreparedStatement stmt1 = conn.prepareStatement("select * from xp_log order by abs(unix_timestamp()-timestamp-86400) asc limit 1")) {
-            try (PreparedStatement stmt2 = conn.prepareStatement("select * from xp_log order by timestamp desc limit 1")) {
-                ResultSet rs1 = stmt1.executeQuery();
-                ResultSet rs2 = stmt2.executeQuery();
-                rs1.next();
-                rs2.next();
-                JSONArray now = new JSONArray(rs2.getString(2));
-                JSONArray old = new JSONArray(rs1.getString(2));
-                HashMap<String, XpLogInfo> xp_log = new HashMap<>();
-                for (int i = 0, ii = old.length(); i < ii; ++i) {
-                    String tag = old.getJSONObject(i).getString("prefix");
-                    XpLogInfo info;
-                    if (!xp_log.containsKey(tag)) {
-                        info = new XpLogInfo();
-                        xp_log.put(tag, info);
-                    } else {
-                        info = xp_log.get(tag);
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            try (PreparedStatement stmt1 = conn.prepareStatement("select * from xp_log order by abs(unix_timestamp()-timestamp-86400) asc limit 1")) {
+                try (PreparedStatement stmt2 = conn.prepareStatement("select * from xp_log order by timestamp desc limit 1")) {
+                    ResultSet rs1 = stmt1.executeQuery();
+                    ResultSet rs2 = stmt2.executeQuery();
+                    rs1.next();
+                    rs2.next();
+                    JSONArray now = new JSONArray(rs2.getString(2));
+                    JSONArray old = new JSONArray(rs1.getString(2));
+                    HashMap<String, XpLogInfo> xp_log = new HashMap<>();
+                    for (int i = 0, ii = old.length(); i < ii; ++i) {
+                        String tag = old.getJSONObject(i).getString("prefix");
+                        XpLogInfo info;
+                        if (!xp_log.containsKey(tag)) {
+                            info = new XpLogInfo();
+                            xp_log.put(tag, info);
+                        } else {
+                            info = xp_log.get(tag);
+                        }
+                        info.tag = tag;
+                        info.name = old.getJSONObject(i).getString("name");
+                        info.old_lvl = old.getJSONObject(i).getInt("level");
+                        info.old_xp = old.getJSONObject(i).getLong("xp");
                     }
-                    info.tag = tag;
-                    info.name = old.getJSONObject(i).getString("name");
-                    info.old_lvl = old.getJSONObject(i).getInt("level");
-                    info.old_xp = old.getJSONObject(i).getLong("xp");
-                }
-                for (int i = 0, ii = now.length(); i < ii; ++i) {
-                    XpLogInfo info;
-                    String tag = now.getJSONObject(i).getString("prefix");
-                    if (!xp_log.containsKey(tag)) {
-                        info = new XpLogInfo();
-                        xp_log.put(tag, info);
-                    } else {
-                        info = xp_log.get(tag);
+                    for (int i = 0, ii = now.length(); i < ii; ++i) {
+                        XpLogInfo info;
+                        String tag = now.getJSONObject(i).getString("prefix");
+                        if (!xp_log.containsKey(tag)) {
+                            info = new XpLogInfo();
+                            xp_log.put(tag, info);
+                        } else {
+                            info = xp_log.get(tag);
+                        }
+                        info.tag = tag;
+                        info.name = now.getJSONObject(i).getString("name");
+                        info.now_lvl = now.getJSONObject(i).getInt("level");
+                        info.now_xp = now.getJSONObject(i).getLong("xp");
                     }
-                    info.tag = tag;
-                    info.name = now.getJSONObject(i).getString("name");
-                    info.now_lvl = now.getJSONObject(i).getInt("level");
-                    info.now_xp = now.getJSONObject(i).getLong("xp");
+                    XpLogInfo[] xp_log2 = xp_log.values().toArray(new XpLogInfo[0]);
+                    Arrays.sort(xp_log2, (xpLogInfo, t1) -> (int) Math.signum(t1.gained() - xpLogInfo.gained()));
+                    JSONObject resp = new JSONObject().put("success", true);
+                    JSONArray data = new JSONArray();
+                    resp.put("guilds", data);
+                    for (XpLogInfo info : xp_log2) {
+                        JSONObject guild = new JSONObject();
+                        guild.put("name", info.name);
+                        guild.put("level", info.now_lvl);
+                        guild.put("xp", info.now_xp);
+                        guild.put("gained", info.gained());
+                        data.put(guild);
+                    }
+                    resp.put("start", rs1.getInt(1));
+                    resp.put("end", rs2.getInt(1));
+                    return new HttpResponse().setResponse(resp.toString()).setRcode(200);
                 }
-                XpLogInfo[] xp_log2 = xp_log.values().toArray(new XpLogInfo[0]);
-                Arrays.sort(xp_log2, (xpLogInfo, t1) -> (int) Math.signum(t1.gained() - xpLogInfo.gained()));
-                JSONObject resp = new JSONObject().put("success", true);
-                JSONArray data = new JSONArray();
-                resp.put("guilds", data);
-                for (XpLogInfo info : xp_log2) {
-                    JSONObject guild = new JSONObject();
-                    guild.put("name", info.name);
-                    guild.put("level", info.now_lvl);
-                    guild.put("xp", info.now_xp);
-                    guild.put("gained", info.gained());
-                    data.put(guild);
-                }
-                resp.put("start", rs1.getInt(1));
-                resp.put("end", rs2.getInt(1));
-                return new HttpResponse().setResponse(resp.toString()).setRcode(200);
             }
         }
     }

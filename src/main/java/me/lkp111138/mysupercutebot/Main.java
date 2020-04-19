@@ -2,6 +2,7 @@ package me.lkp111138.mysupercutebot;
 
 import me.lkp111138.mysupercutebot.api.ApiServer;
 import me.lkp111138.mysupercutebot.api.discord.DiscordBot;
+import me.lkp111138.mysupercutebot.db.ConnectionPool;
 import me.lkp111138.mysupercutebot.helpers.DatabaseHelper;
 import me.lkp111138.mysupercutebot.helpers.Looper;
 
@@ -13,6 +14,7 @@ public class Main {
     // ping wynn api every 20secs yay
     private static ScheduledThreadPoolExecutor pool = new ScheduledThreadPoolExecutor(2);
     private static long started;
+    private static ConnectionPool dbPool;
 
     public static void main(String[] args) throws ClassNotFoundException, SQLException, LoginException {
         // set up sql connection

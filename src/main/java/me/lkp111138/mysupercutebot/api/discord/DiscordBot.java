@@ -151,10 +151,11 @@ public class DiscordBot extends ListenerAdapter {
     @Override
     public void onTextChannelDelete(TextChannelDeleteEvent event) {
         // delete any associated terr/war tracks
-        Connection conn = DatabaseHelper.getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement("delete from discord_war_log where channel_id=?")) {
-            stmt.setLong(1, event.getChannel().getIdLong());
-            stmt.execute();
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            try (PreparedStatement stmt = conn.prepareStatement("delete from discord_war_log where channel_id=?")) {
+                stmt.setLong(1, event.getChannel().getIdLong());
+                stmt.execute();
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
