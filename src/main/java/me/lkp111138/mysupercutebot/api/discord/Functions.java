@@ -29,7 +29,10 @@ public class Functions {
         for (int i = 0; i < margin; i++) {
             sb.append(' ');
         }
-        sb.append("Time: ").append(sdf.format(war.getInt("start_time") * 1000L)).append(" - ").append(sdf.format(war.getInt("end_time") * 1000L));
+        sb.append("Time: ").append(sdf.format(war.getInt("start_time") * 1000L)).append(" - ");
+        if (war.getBoolean("verdict")) {
+            sb.append(sdf.format(war.getInt("end_time") * 1000L));
+        }
         sb.append("\n");
         for (int i = 0; i < margin; i++) {
             sb.append(' ');
