@@ -57,7 +57,7 @@ public class Looper extends Thread {
                 while (rs.next()) {
                     guilds.put(rs.getString(2), rs.getString(1));
                 }
-                JSONArray guild_arr = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=guildList")).getJSONArray("guilds");
+                JSONArray guild_arr = new JSONObject(http_get("https://api-legacy.wynncraft.com/public_api.php?action=guildList")).getJSONArray("guilds");
                 Iterator<Object> it = guild_arr.iterator();
                 while (it.hasNext()) {
                     String g = (String) it.next();
@@ -123,7 +123,7 @@ public class Looper extends Thread {
     private void terrlog() {
         String _terr_list;
         try {
-            _terr_list = http_get("https://api.wynncraft.com/public_api.php?action=territoryList");
+            _terr_list = http_get("https://api-legacy.wynncraft.com/public_api.php?action=territoryList");
             JSONObject terr_list = new JSONObject(_terr_list);
             if (terr_list.has("territories")) {
                 JSONObject cache = terrlog_cache;
