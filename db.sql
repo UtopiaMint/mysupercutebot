@@ -21,10 +21,10 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `auth_codes` (
-                              `ign` varchar(32) NOT NULL,
-                              `uuid` char(32) NOT NULL,
-                              `code` char(6) NOT NULL,
-                              `good_thru` int(11) NOT NULL
+    `ign` varchar(32) NOT NULL,
+    `uuid` char(32) NOT NULL,
+    `code` char(6) NOT NULL,
+    `good_thru` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -34,8 +34,8 @@ CREATE TABLE `auth_codes` (
 --
 
 CREATE TABLE `discord_terr_log` (
-                                    `channel_id` bigint(20) NOT NULL,
-                                    `guild` varchar(50) DEFAULT NULL
+    `channel_id` bigint(20) NOT NULL,
+    `guild` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -45,8 +45,8 @@ CREATE TABLE `discord_terr_log` (
 --
 
 CREATE TABLE `discord_war_log` (
-                                   `channel_id` bigint(20) NOT NULL,
-                                   `guild` varchar(50) DEFAULT NULL
+    `channel_id` bigint(20) NOT NULL,
+    `guild` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT;
 
 -- --------------------------------------------------------
@@ -56,8 +56,8 @@ CREATE TABLE `discord_war_log` (
 --
 
 CREATE TABLE `guild_tag` (
-                             `tag` char(3) COLLATE utf8_bin NOT NULL,
-                             `guild` varchar(50) CHARACTER SET utf8 NOT NULL
+    `tag` char(3) COLLATE utf8_bin NOT NULL,
+    `guild` varchar(50) CHARACTER SET utf8 NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 -- --------------------------------------------------------
@@ -67,11 +67,11 @@ CREATE TABLE `guild_tag` (
 --
 
 CREATE TABLE `imp_drain` (
-                             `id` int(11) NOT NULL DEFAULT '0',
-                             `guild` varchar(50) DEFAULT NULL,
-                             `dur` bigint(13) NOT NULL,
-                             `size` decimal(26,1) DEFAULT NULL,
-                             `estimated_kills` decimal(38,0) DEFAULT NULL
+    `id` int(11) NOT NULL DEFAULT '0',
+    `guild` varchar(50) DEFAULT NULL,
+    `dur` bigint(13) NOT NULL,
+    `size` decimal(26,1) DEFAULT NULL,
+    `estimated_kills` decimal(38,0) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -81,16 +81,16 @@ CREATE TABLE `imp_drain` (
 --
 
 CREATE TABLE `player_war_log` (
-                                  `id` int(11) NOT NULL,
-                                  `uuid` char(32) NOT NULL,
-                                  `ign` varchar(50) NOT NULL,
-                                  `guild` varchar(50) NOT NULL,
-                                  `war_id` int(11) DEFAULT NULL,
-                                  `survived` bit(1) DEFAULT NULL,
-                                  `won` bit(1) DEFAULT NULL,
-                                  `count_total` int(11) NOT NULL DEFAULT '0',
-                                  `count_survived` int(11) NOT NULL DEFAULT '0',
-                                  `count_won` int(11) NOT NULL DEFAULT '0'
+    `id` int(11) NOT NULL,
+    `uuid` char(32) NOT NULL,
+    `ign` varchar(50) NOT NULL,
+    `guild` varchar(50) NOT NULL,
+    `war_id` int(11) DEFAULT NULL,
+    `survived` bit(1) DEFAULT NULL,
+    `won` bit(1) DEFAULT NULL,
+    `count_total` int(11) NOT NULL DEFAULT '0',
+    `count_survived` int(11) NOT NULL DEFAULT '0',
+    `count_won` int(11) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -127,12 +127,12 @@ DELIMITER ;
 -- (See below for the actual view)
 --
 CREATE TABLE `player_war_total` (
-                                    `uuid` char(32)
-    ,`ign` varchar(50)
-    ,`guild` varchar(50)
-    ,`count_total` int(11)
-    ,`count_won` int(11)
-    ,`count_survived` int(11)
+    `uuid` char(32),
+    `ign` varchar(50),
+    `guild` varchar(50),
+    `count_total` int(11),
+    `count_won` int(11),
+    `count_survived` int(11)
 );
 
 -- --------------------------------------------------------
@@ -142,12 +142,12 @@ CREATE TABLE `player_war_total` (
 --
 
 CREATE TABLE `sessions` (
-                            `id` int(11) NOT NULL,
-                            `ign` varchar(50) NOT NULL,
-                            `uuid` char(32) NOT NULL,
-                            `sess_token` char(64) NOT NULL,
-                            `login_ip` varchar(39) NOT NULL,
-                            `good_thru` int(11) NOT NULL
+    `id` int(11) NOT NULL,
+    `ign` varchar(50) NOT NULL,
+    `uuid` char(32) NOT NULL,
+    `sess_token` char(64) NOT NULL,
+    `login_ip` varchar(39) NOT NULL,
+    `good_thru` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -157,8 +157,8 @@ CREATE TABLE `sessions` (
 --
 
 CREATE TABLE `terrs` (
-                         `name` varchar(50) NOT NULL,
-                         `assigned_to` varchar(50) DEFAULT NULL
+    `name` varchar(50) NOT NULL,
+    `assigned_to` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -168,12 +168,12 @@ CREATE TABLE `terrs` (
 --
 
 CREATE TABLE `terr_log` (
-                            `id` int(11) NOT NULL,
-                            `defender` varchar(50) NOT NULL DEFAULT '0',
-                            `attacker` varchar(50) NOT NULL DEFAULT '0',
-                            `terr_name` varchar(50) NOT NULL DEFAULT '0',
-                            `acquired` int(11) NOT NULL DEFAULT '0',
-                            `hold_time` int(11) NOT NULL DEFAULT '0'
+    `id` int(11) NOT NULL,
+    `defender` varchar(50) NOT NULL DEFAULT '0',
+    `attacker` varchar(50) NOT NULL DEFAULT '0',
+    `terr_name` varchar(50) NOT NULL DEFAULT '0',
+    `acquired` int(11) NOT NULL DEFAULT '0',
+    `hold_time` int(11) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -183,14 +183,14 @@ CREATE TABLE `terr_log` (
 --
 
 CREATE TABLE `war_log` (
-                           `id` int(11) NOT NULL,
-                           `server` varchar(6) NOT NULL DEFAULT '0',
-                           `guild` varchar(50) DEFAULT NULL,
-                           `start_time` int(11) NOT NULL DEFAULT '-1',
-                           `end_time` int(11) NOT NULL DEFAULT '-1',
-                           `terr_entry` int(11) DEFAULT NULL,
-                           `count_total` int(11) NOT NULL DEFAULT '0',
-                           `count_won` int(11) NOT NULL DEFAULT '0'
+    `id` int(11) NOT NULL,
+    `server` varchar(6) NOT NULL DEFAULT '0',
+    `guild` varchar(50) DEFAULT NULL,
+    `start_time` int(11) NOT NULL DEFAULT '-1',
+    `end_time` int(11) NOT NULL DEFAULT '-1',
+    `terr_entry` int(11) DEFAULT NULL,
+    `count_total` int(11) NOT NULL DEFAULT '0',
+    `count_won` int(11) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -226,9 +226,9 @@ DELIMITER ;
 -- (See below for the actual view)
 --
 CREATE TABLE `war_total` (
-                             `guild` varchar(50)
-    ,`count_total` int(11)
-    ,`count_won` int(11)
+    `guild` varchar(50),
+    `count_total` int(11),
+    `count_won` int(11)
 );
 
 -- --------------------------------------------------------
@@ -238,9 +238,15 @@ CREATE TABLE `war_total` (
 --
 
 CREATE TABLE `xp_log` (
-                          `timestamp` int(11) NOT NULL,
-                          `payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL
+    `timestamp` int(11) NOT NULL,
+    `payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `player_guild_hint` (
+    `uuid` char(32),
+    `guild` varchar(32),
+    PRIMARY KEY (`uuid`)
+);
 
 -- --------------------------------------------------------
 

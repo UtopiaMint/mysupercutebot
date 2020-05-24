@@ -168,9 +168,32 @@ public class Looper extends Thread {
             for (int j = 0; j < players.length(); ++j) {
                 String name = players.getString(j);
                 if (war.getGuild() == null) {
+                    JSONObject player = Functions.playerInfo(name).getJSONArray("data").getJSONObject(0);
                     try {
-                        war.setGuild(Functions.playerInfo(name).getJSONArray("data").getJSONObject(0).getJSONObject("guild").getString("name"), ts);
-                    } catch (Exception ignored){
+                        war.setGuild(player.getJSONObject("guild").getString("name"), ts);
+                    } catch (Exception e) {
+                        // if the player is in a war, they should be in a guild
+                        // so we search the player guild hint and try to verify that
+                        try (Connection conn = DatabaseHelper.getConnection()) {
+                            String uuid = player.getString("uuid");
+                            PreparedStatement stmt = conn.prepareStatement("SELECT guild FROM player_guild_hint WHERE uuid=?");
+                            stmt.setString(1, uuid.replaceAll("-", ""));
+                            ResultSet rs = stmt.executeQuery();
+                            if (rs.next()) {
+                                String guildHint = rs.getString(1);
+                                JSONObject guildInfo = guildInfo(guildHint);
+                                JSONArray guildMembers = guildInfo.getJSONArray("members");
+                                // if the player is indeed in the hinted guild, they are in that guild
+                                for (int k = 0; k < guildMembers.length(); k++) {
+                                    JSONObject guildMember = guildMembers.getJSONObject(k);
+                                    if (guildMember.getString("uuid").equals(uuid)) {
+                                        war.setGuild(guildHint, ts);
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (SQLException ignored) {
+                        }
                     }
                 }
             }
