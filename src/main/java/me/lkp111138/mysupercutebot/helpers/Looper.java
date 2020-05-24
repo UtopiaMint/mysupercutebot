@@ -258,7 +258,7 @@ public class Looper extends Thread {
             return -1;
         }
         TimeZone tz = Calendar.getInstance().getTimeZone();
-        return date.getTime() + tz.getRawOffset() + 14400000; // wynn is at gmt-5 now smh // edit: -4 now
+        return date.getTime() + tz.getRawOffset(); // wynn is at gmt-5 now smh // edit: -4 now // edit: gmt now
     }
 
     public static String tag2name(String tag) {

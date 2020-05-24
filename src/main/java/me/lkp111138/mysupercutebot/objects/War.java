@@ -14,7 +14,6 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 
 public class War {
     private String server;
@@ -106,7 +105,7 @@ public class War {
         if (guild == null) {
             try {
                 guild = Functions.playerInfo(name).getJSONArray("data").getJSONObject(0).getJSONObject("guild").getString("name");
-            } catch (NullPointerException ignored) {
+            } catch (Exception ignored) {
                 // blame wynn api
             }
         }
