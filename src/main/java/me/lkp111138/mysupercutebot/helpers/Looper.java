@@ -57,7 +57,7 @@ public class Looper extends Thread {
                 while (rs.next()) {
                     guilds.put(rs.getString(2), rs.getString(1));
                 }
-                JSONArray guild_arr = new JSONObject(http_get("https://api-legacy.wynncraft.com/public_api.php?action=guildList")).getJSONArray("guilds");
+                JSONArray guild_arr = new JSONObject(http_get("https://api.wynncraft.com/public_api.php?action=guildList")).getJSONArray("guilds");
                 Iterator<Object> it = guild_arr.iterator();
                 while (it.hasNext()) {
                     String g = (String) it.next();
@@ -110,7 +110,7 @@ public class Looper extends Thread {
     private void warlog() {
         String _online = null;
         try {
-            _online = http_get("https://api.wynncraft.com/public_api.php?action=onlinePlayers");
+            _online = http_get("https://api-legacy.wynncraft.com/public_api.php?action=onlinePlayers");
             JSONObject online = new JSONObject(_online);
             warlog_log(warlog_cache, online);
             warlog_cache = online;
